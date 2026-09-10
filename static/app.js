@@ -33,6 +33,24 @@ function setStatus(text) {
   statusEl.textContent = text;
 }
 
+async function showGroqLine() {
+  const el = document.getElementById("groq-line");
+  if (!el) return;
+  try {
+    const res = await fetch("/api/status");
+    const data = await res.json();
+    if (data.groq) {
+      el.textContent = "Groq chat: on (" + (data.model || "model") + ")";
+    } else {
+      el.textContent = "Groq chat: off — paste OPENAI_API_KEY in .env, save, restart app.py";
+    }
+  } catch (err) {
+    el.textContent = "Groq chat: cannot reach the server. Is app.py running?";
+  }
+}
+
+showGroqLine();
+
 function hideEmpty() {
   emptyState?.remove();
 }
@@ -65,9 +83,13 @@ function updateSpokenHint() {
   }
   const meta = languagesById.get(id);
   if (!meta) return;
-  spokenHint.textContent = meta.spoken
-    ? meta.name + " can speak back as well as show text."
-    : meta.name + " replies as text for now — no spoken voice wired yet.";
+  const voiceNotes = {
+    edge: " uses a dedicated South African neural voice (Microsoft).",
+    simba: " uses a native Simba TTS voice. First play may download the model.",
+    mms: " uses Meta MMS (Xitsonga). First play may download the model.",
+    fallback: " has no dedicated native checkpoint yet — you still hear a multilingual fallback, not a YouTube clone.",
+  };
+  spokenHint.textContent = meta.name + (voiceNotes[meta.voice] || " can speak back as well as show text.");
 }
 
 async function loadLanguages() {
@@ -202,11 +224,14 @@ async function sendText(text) {
     if (recording) stopRecording();
     return;
   }
+  setStatus("5 · Speaking — Lentswe is answering…");
   await maybeSpeak(speakable(data.reply), data.language || language);
+  setStatus("Ready.");
+  refreshMemoryLists();
 }
 
 async function sendAudio(blob) {
-  setStatus("Transcribing…");
+  setStatus("2 · Speech-to-text — turning your voice into words…");
   const wav = await blobToWav(blob);
   const formData = new FormData();
   formData.append("audio", wav, "speech.wav");
@@ -224,12 +249,15 @@ async function sendAudio(blob) {
   history.push({ role: "assistant", content: data.reply });
   addBubble("user", data.transcript, "You · " + data.language);
   addBubble("bot", data.reply, "Lentswe");
-  setStatus("Ready.");
   if (isQuiet(data.transcript)) {
     stopSpeech();
+    setStatus("Ready.");
     return;
   }
+  setStatus("5 · Speaking — Lentswe is answering…");
   await maybeSpeak(speakable(data.reply), data.language);
+  setStatus("Ready.");
+  refreshMemoryLists();
 }
 
 async function startRecording() {
@@ -254,7 +282,7 @@ async function startRecording() {
   recording = true;
   micButton.classList.add("hot");
   micButton.setAttribute("aria-pressed", "true");
-  setStatus("Listening… speak, then click the mic again to send.");
+  setStatus("1 · Capture — listening. Click the mic again when you finish.");
 }
 
 function stopRecording() {
@@ -346,20 +374,37 @@ function renderList(key, ulId) {
   if (!ul) return;
   const items = loadItems(key);
   ul.innerHTML = "";
-  items.forEach(function (item, index) {
+  items.forEach(function (item) {
+    const label = typeof item === "string" ? item : item.description || item.goal || "";
     const li = document.createElement("li");
-    li.appendChild(document.createTextNode(item));
-    const del = document.createElement("button");
-    del.type = "button";
-    del.textContent = "Remove";
-    del.addEventListener("click", function () {
-      const next = loadItems(key).filter(function (_, i) { return i !== index; });
-      saveItems(key, next);
-      renderList(key, ulId);
-    });
-    li.appendChild(del);
+    li.appendChild(document.createTextNode(label));
+    if (key === TASK_KEY) {
+      const del = document.createElement("button");
+      del.type = "button";
+      del.textContent = "Done";
+      del.addEventListener("click", function () {
+        sendText("mark " + label + " as done");
+      });
+      li.appendChild(del);
+    }
     ul.appendChild(li);
   });
+}
+
+async function refreshMemoryLists() {
+  try {
+    const res = await fetch("/api/memory");
+    if (!res.ok) return;
+    const data = await res.json();
+    const tasks = (data.tasks || []).filter(function (t) { return !t.done; }).map(function (t) { return t.description; });
+    const goals = (data.goals || []).map(function (g) { return g.goal; });
+    saveItems(TASK_KEY, tasks);
+    saveItems(GOAL_KEY, goals);
+    renderList(TASK_KEY, "task-list");
+    renderList(GOAL_KEY, "goal-list");
+  } catch (err) {
+    return;
+  }
 }
 
 function addItem(key, ulId, value) {
@@ -373,40 +418,6 @@ function addItem(key, ulId, value) {
 }
 
 function handleLocalLists(text) {
-  const raw = text.trim();
-  const lower = raw.toLowerCase();
-  let match = raw.match(/^(?:add to (?:my )?(?:list|todo)|add task|remind me to)\s+(.+)/i);
-  if (match) {
-    addItem(TASK_KEY, "task-list", match[1]);
-    addBubble("user", raw, "You");
-    addBubble("bot", "Added to your task list: " + match[1], "Lentswe");
-    maybeSpeak("Added to your list.", languageSelect.value);
-    return true;
-  }
-  if (/^(what('s| is) on my list|show (my )?(tasks|list)|my tasks)$/i.test(lower)) {
-    const items = loadItems(TASK_KEY);
-    const reply = items.length ? "Your tasks: " + items.join(". ") : "Your task list is empty.";
-    addBubble("user", raw, "You");
-    addBubble("bot", reply, "Lentswe");
-    maybeSpeak(reply, languageSelect.value);
-    return true;
-  }
-  match = raw.match(/^(?:my goal is|add goal|new goal)\s+(.+)/i);
-  if (match) {
-    addItem(GOAL_KEY, "goal-list", match[1]);
-    addBubble("user", raw, "You");
-    addBubble("bot", "Saved goal: " + match[1], "Lentswe");
-    maybeSpeak("Goal saved.", languageSelect.value);
-    return true;
-  }
-  if (/^(what are my goals|show (my )?goals|my goals)$/i.test(lower)) {
-    const items = loadItems(GOAL_KEY);
-    const reply = items.length ? "Your goals: " + items.join(". ") : "You have not saved a goal yet.";
-    addBubble("user", raw, "You");
-    addBubble("bot", reply, "Lentswe");
-    maybeSpeak(reply, languageSelect.value);
-    return true;
-  }
   return false;
 }
 
@@ -437,15 +448,19 @@ document.querySelectorAll(".ask").forEach(function (btn) {
 document.getElementById("task-form")?.addEventListener("submit", function (event) {
   event.preventDefault();
   const input = document.getElementById("task-input");
-  addItem(TASK_KEY, "task-list", input.value);
+  const value = (input.value || "").trim();
+  if (!value) return;
   input.value = "";
+  sendText("add to my list " + value);
 });
 
 document.getElementById("goal-form")?.addEventListener("submit", function (event) {
   event.preventDefault();
   const input = document.getElementById("goal-input");
-  addItem(GOAL_KEY, "goal-list", input.value);
+  const value = (input.value || "").trim();
+  if (!value) return;
   input.value = "";
+  sendText("my goal is " + value);
 });
 
 function bindA11y(id, className) {
@@ -465,4 +480,168 @@ bindA11y("a11y-contrast", "high-contrast");
 bindA11y("a11y-motion", "reduce-motion");
 renderList(TASK_KEY, "task-list");
 renderList(GOAL_KEY, "goal-list");
+refreshMemoryLists();
+
+const HOME_KEY = "lentswe-home";
+
+function showHomeSaved() {
+  const el = document.getElementById("home-saved");
+  const input = document.getElementById("home-input");
+  if (!el) return;
+  const addr = (localStorage.getItem(HOME_KEY) || "").trim();
+  el.textContent = addr ? "Saved home: " + addr : "No home saved yet.";
+  if (input && addr) input.value = addr;
+}
+
+document.getElementById("home-form")?.addEventListener("submit", function (event) {
+  event.preventDefault();
+  const input = document.getElementById("home-input");
+  const value = (input && input.value || "").trim();
+  if (!value) {
+    setStatus("Type a home address first.");
+    return;
+  }
+  localStorage.setItem(HOME_KEY, value);
+  showHomeSaved();
+  setStatus("Home address saved on this device.");
+  pinHomeMap();
+});
+
+async function pinHomeMap() {
+  const addr = (localStorage.getItem(HOME_KEY) || "").trim();
+  const frame = document.getElementById("home-map");
+  if (!addr || !frame) {
+    setStatus("Save a home address first.");
+    return;
+  }
+  const res = await fetch("/api/geocode?q=" + encodeURIComponent(addr));
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Could not pin that address.");
+    return;
+  }
+  frame.src = data.embed;
+  frame.hidden = false;
+  setStatus("Map pin is OpenStreetMap.");
+}
+
+function guideMeHome() {
+  const dest = (localStorage.getItem(HOME_KEY) || "").trim();
+  if (!dest) {
+    setStatus("Save a home address first.");
+    return;
+  }
+  setStatus("Asking for your location once, to start the route…");
+  const openMaps = function (origin) {
+    let url = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(dest) + "&travelmode=driving";
+    if (origin) url += "&origin=" + encodeURIComponent(origin);
+    window.open(url, "_blank", "noopener");
+  };
+  if (!navigator.geolocation) {
+    openMaps("");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      openMaps(pos.coords.latitude + "," + pos.coords.longitude);
+      setStatus("Maps opened for directions home.");
+    },
+    function () {
+      openMaps("");
+      setStatus("No GPS. Maps opened with your home pin only.");
+    },
+    { enableHighAccuracy: true, timeout: 12000 }
+  );
+}
+
+document.getElementById("home-show-map")?.addEventListener("click", pinHomeMap);
+document.getElementById("home-guide")?.addEventListener("click", guideMeHome);
+showHomeSaved();
+
+const SPOTIFY_KEY = "lentswe-spotify";
+
+function spotifyEmbedUrl(raw) {
+  const text = (raw || "").trim();
+  let match = text.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|track|artist)\/([a-zA-Z0-9]+)/i);
+  if (!match) match = text.match(/^spotify:(playlist|album|track|artist):([a-zA-Z0-9]+)/i);
+  if (!match) return null;
+  return "https://open.spotify.com/embed/" + match[1] + "/" + match[2];
+}
+
+function showSpotifyEmbed() {
+  const frame = document.getElementById("spotify-frame");
+  const hint = document.getElementById("spotify-saved");
+  const input = document.getElementById("spotify-input");
+  if (!frame || !hint) return;
+  const saved = (localStorage.getItem(SPOTIFY_KEY) || "").trim();
+  if (input && saved) input.value = saved;
+  const embed = spotifyEmbedUrl(saved);
+  if (!embed) {
+    frame.hidden = true;
+    frame.removeAttribute("src");
+    hint.textContent = saved
+      ? "That does not look like a Spotify playlist, album, track, or artist link."
+      : "No Spotify link saved in this browser yet.";
+    return;
+  }
+  frame.src = embed;
+  frame.hidden = false;
+  hint.textContent = "Embed saved in this browser only. Playback uses Spotify’s player.";
+}
+
+document.getElementById("spotify-form")?.addEventListener("submit", function (event) {
+  event.preventDefault();
+  const value = (document.getElementById("spotify-input")?.value || "").trim();
+  if (!spotifyEmbedUrl(value)) {
+    setStatus("Paste a full Spotify playlist, album, track, or artist URL.");
+    return;
+  }
+  localStorage.setItem(SPOTIFY_KEY, value);
+  showSpotifyEmbed();
+  setStatus("Spotify embed saved.");
+});
+
+showSpotifyEmbed();
+
+document.getElementById("ytm-form")?.addEventListener("submit", function (event) {
+  event.preventDefault();
+  const q = (document.getElementById("ytm-input")?.value || "").trim();
+  if (!q) {
+    window.open("https://music.youtube.com/", "_blank", "noopener");
+    setStatus("Opened YouTube Music.");
+    return;
+  }
+  window.open("https://music.youtube.com/search?q=" + encodeURIComponent(q), "_blank", "noopener");
+  setStatus("Opened YouTube Music search.");
+});
+
+document.getElementById("music-open-spotify")?.addEventListener("click", function () {
+  const saved = (localStorage.getItem(SPOTIFY_KEY) || "").trim();
+  window.open(saved || "https://open.spotify.com/", "_blank", "noopener");
+});
+
+document.getElementById("music-open-ytm")?.addEventListener("click", function () {
+  window.open("https://music.youtube.com/", "_blank", "noopener");
+});
+
+async function checkReminders() {
+  try {
+    const res = await fetch("/api/reminders/due");
+    if (!res.ok) return;
+    const data = await res.json();
+    const rows = data.reminders || [];
+    const language = languageSelect.value === "auto" ? "english" : languageSelect.value;
+    for (let i = 0; i < rows.length; i++) {
+      const line = "Reminder: " + (rows[i].text || "time is up");
+      addBubble("bot", line, "Lentswe");
+      history.push({ role: "assistant", content: line });
+      setStatus("Reminder.");
+      await maybeSpeak(line, language);
+    }
+  } catch (err) {
+    return;
+  }
+}
+
+setInterval(checkReminders, 5000);
 

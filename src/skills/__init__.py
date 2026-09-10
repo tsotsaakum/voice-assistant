@@ -2,30 +2,16 @@
 
 
 def travel_reply(user_text: str) -> str:
+    from src.weather import is_pack_query, pack_for_trip
+
+    if is_pack_query(user_text):
+        return pack_for_trip(user_text)
     text = user_text.lower()
-    if any(c in text for c in ("cape town", "kaapstad", "ct")):
-        return (
-            "Cape Town: check the wind and mountain weather before you go out. "
-            "Ask me “weather in Cape Town”. Keep valuables zipped; tell someone your route if you hike."
-        )
-    if any(c in text for c in ("johannesburg", "joburg", "jozi", "jhb")):
-        return (
-            "Johannesburg: plan daylight travel where you can, use vetted taxis or Gautrain, "
-            "and ask me “weather in Johannesburg” before you leave."
-        )
-    if "durban" in text:
-        return (
-            "Durban: humid and warm most of the year. Swim only at guarded beaches. "
-            "Ask me “weather in Durban” for today’s forecast."
-        )
-    if "pretoria" in text or "tshwane" in text:
-        return (
-            "Pretoria / Tshwane: thunderstorms in summer afternoons are common. "
-            "Ask me “weather in Pretoria”."
-        )
+    if any(c in text for c in ("cape town", "kaapstad", "ct", "durban", "johannesburg", "joburg", "pretoria", "tshwane")):
+        return pack_for_trip(user_text)
     return (
-        "Travel with Lentswe: pick a city chip, or say “weather in Cape Town”. "
-        "I give forecasts and practical SA tips — I do not book tickets. "
+        "Travel with Lentswe: name a city, or say “what to pack for Durban”. "
+        "I use live Open-Meteo — I do not book tickets. "
         "Share your live location with a person you trust, not with this app."
     )
 
@@ -52,24 +38,30 @@ def health_reply(user_text: str) -> str:
             "or emergency 112. I am a voice app, not a counsellor."
         )
     return (
-        "Health and wellbeing: I am not a doctor. I can remind you to drink water, "
-        "breathe for a minute, or open your task list. "
-        "Mental health: SADAG 0800 567 567. Emergency: 112. "
-        "A BMI tool is a separate project — I will not guess your health from a chat."
+        "Health: I am not a doctor and I will not diagnose you. "
+        "Say “log that I have a headache” for a private symptom diary, or “show my symptoms”. "
+        "Mental health: SADAG 0800 567 567. Emergency: 112."
+    )
+
+
+def music_reply() -> str:
+    return (
+        "Open the Music tab. Paste a Spotify playlist, album, or track link to embed it, "
+        "or search YouTube Music. I do not play ripped files or clone a singer’s voice."
     )
 
 
 def productivity_reply() -> str:
     return (
         "Productivity: add tasks in the Tasks panel, or say “add to my list buy bread”. "
-        "Say “what’s on my list” to hear them. I store the list on this device only."
+        "Say “what’s on my list” to hear them. Tasks are saved in a local JSON file on this computer."
     )
 
 
 def goals_reply() -> str:
     return (
-        "Goals live on this device. Open the Goals panel, or say “my goal is finish the weather app”. "
-        "Say “what are my goals” to hear them. I do not upload your goals to a server."
+        "Goals: say “my goal is save 500 this month” and “how am I doing on my goals”. "
+        "I store them in a local JSON file. I do not upload your goals."
     )
 
 
@@ -124,6 +116,24 @@ def route_skill(user_text: str) -> str | None:
         return learning_reply(user_text)
     if any(w in text for w in ("my goal", "goals", "new year", "ambition")):
         return goals_reply()
+    if any(w in text for w in ("take me home", "directions home", "guide me home", "navigate home")):
+        return (
+            "Open the Home tab, then tap Guide me home. "
+            "I do not store your GPS on a server."
+        )
+    if any(
+        w in text
+        for w in (
+            "play music",
+            "play a song",
+            "play me a song",
+            "spotify",
+            "youtube music",
+            "open music",
+            "music tab",
+        )
+    ):
+        return music_reply()
     if any(w in text for w in ("travel", "trip", "pack", "airport", "flight", "hike")):
         return travel_reply(user_text)
     if any(w in text for w in ("productivity", "be productive", "focus")):

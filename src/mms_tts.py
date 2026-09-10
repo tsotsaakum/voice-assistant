@@ -1,30 +1,53 @@
-"""Optional local TTS for languages without a Microsoft neural voice.
+"""Local VITS TTS: Meta MMS where the Hub has a checkpoint, else UBC Simba-TTS.
 
-Install torch + transformers + scipy if you want Sepedi, isiXhosa, etc. spoken.
-Without those packages, those languages still work as text.
+These are trained synthetic voices — not YouTube clones.
 """
+
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 
 _MODELS: dict[str, tuple] = {}
+_MISSING: set[str] = set()
+
+
+def speak_native(text: str, repos: tuple[str, ...] | list[str] | None) -> bytes | None:
+    if not text or not repos:
+        return None
+    for repo in repos:
+        audio = _speak_repo(text, repo)
+        if audio:
+            return audio
+    return None
 
 
 def speak_mms(text: str, mms_code: str | None) -> bytes | None:
+    """Back-compat: facebook/mms-tts-{code} when that repo exists (Xitsonga tso)."""
     if not mms_code:
+        return None
+    return speak_native(text, (f"facebook/mms-tts-{mms_code}",))
+
+
+def _speak_repo(text: str, repo: str) -> bytes | None:
+    if not repo or repo in _MISSING:
         return None
     import scipy.io.wavfile
     import torch
     from transformers import AutoTokenizer, VitsModel
 
-    if mms_code not in _MODELS:
-        repo = f"facebook/mms-tts-{mms_code}"
-        model = VitsModel.from_pretrained(repo)
-        tokenizer = AutoTokenizer.from_pretrained(repo)
-        _MODELS[mms_code] = (model, tokenizer)
+    if repo not in _MODELS:
+        token = os.getenv("HF_TOKEN", "").strip() or None
+        try:
+            model = VitsModel.from_pretrained(repo, token=token)
+            tokenizer = AutoTokenizer.from_pretrained(repo, token=token)
+        except Exception:
+            _MISSING.add(repo)
+            return None
+        _MODELS[repo] = (model, tokenizer)
 
-    model, tokenizer = _MODELS[mms_code]
+    model, tokenizer = _MODELS[repo]
     inputs = tokenizer(text, return_tensors="pt")
     with torch.no_grad():
         waveform = model(**inputs).waveform

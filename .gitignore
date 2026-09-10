@@ -7,3 +7,4 @@ __pycache__/
 .vscode/
 *.wav
 *.mp3
+data/lentswe.json

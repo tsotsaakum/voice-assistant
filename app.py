@@ -3,14 +3,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, request, send_from_directory
-
-from src.brain import think
-from src.languages import public_language_list
-from src.stt import transcribe_wav
-from src.tts import speak
+from dotenv import load_dotenv
+from flask import Flask, Response, jsonify, redirect, request, send_from_directory
 
 ROOT = Path(__file__).resolve().parent
+load_dotenv(ROOT / ".env", override=True)
+
+from src.brain import think
+from src.chat import chat_model, openai_enabled
+from src.geo import geocode_place
+from src.languages import public_language_list
+from src.stt import transcribe_wav
+from src.store import load as load_memory
+from src.tts import speak
+
 STATIC = ROOT / "static"
 
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
@@ -24,6 +30,44 @@ def home():
 @app.get("/api/languages")
 def languages():
     return jsonify({"languages": public_language_list()})
+
+
+@app.get("/api/memory")
+def memory():
+    return jsonify(load_memory())
+
+
+@app.get("/api/status")
+def status():
+    return jsonify({"groq": openai_enabled(), "model": chat_model()})
+
+
+@app.get("/api/reminders/due")
+def reminders_due():
+    from src.store import due_reminders
+
+    return jsonify({"reminders": due_reminders()})
+
+@app.get("/api/geocode")
+def geocode():
+    place = (request.args.get("q") or "").strip()
+    if not place:
+        return jsonify({"detail": "Save a home address first."}), 400
+    try:
+        hit = geocode_place(place)
+    except Exception:
+        return jsonify({"detail": "Map lookup is down. Try again in a minute."}), 503
+    if not hit:
+        return jsonify({"detail": "OpenStreetMap could not pin that address."}), 404
+    return jsonify(hit)
+
+
+@app.get("/api/chat")
+@app.get("/api/talk")
+@app.get("/api/speak")
+def api_use_the_app():
+    """Browsers send GET; these routes only work as POST from the Lentswe page."""
+    return redirect("/")
 
 
 @app.post("/api/talk")
@@ -83,4 +127,4 @@ def speak_route():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=7000, debug=True)
+    app.run(host="127.0.0.1", port=7000, debug=True, load_dotenv=False)

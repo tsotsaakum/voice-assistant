@@ -18,7 +18,7 @@ MULTILINGUAL_EDGE = "en-US-AvaMultilingualNeural"
 
 
 def speak(text: str, language_id: str) -> bytes | None:
-    """Dedicated Microsoft voices, then Meta MMS (native-language), then Google, then multilingual."""
+    """Native voices first (Edge SA / Simba / MMS), then Google, then multilingual so the app is not silent."""
     meta = SOUTH_AFRICAN_LANGUAGES.get(language_id) or SOUTH_AFRICAN_LANGUAGES["english"]
 
     if meta.edge_tts_voice:
@@ -28,9 +28,9 @@ def speak(text: str, language_id: str) -> bytes | None:
             pass
 
     try:
-        from src.mms_tts import speak_mms
+        from src.mms_tts import speak_native
 
-        audio = speak_mms(text, meta.mms_code)
+        audio = speak_native(text, meta.hf_tts_repos)
         if audio:
             return audio
     except Exception:
@@ -46,10 +46,39 @@ def speak(text: str, language_id: str) -> bytes | None:
     except Exception:
         pass
 
+    if language_id in {"english", "afrikaans"}:
+        audio = _pyttsx3_wav(text)
+        if audio:
+            return audio
+
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if api_key:
         return _openai_speech(text, meta.name, api_key)
     return None
+
+
+def _pyttsx3_wav(text: str) -> bytes | None:
+    """Windows SAPI via pyttsx3 (assignment beginner TTS). Used if Edge is down."""
+    if os.getenv("USE_PYTTSX3", "1").strip() in {"0", "false", "no"}:
+        return None
+    try:
+        import pyttsx3
+    except ImportError:
+        return None
+    path = None
+    try:
+        engine = pyttsx3.init()
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            path = Path(tmp.name)
+        engine.save_to_file(text, str(path))
+        engine.runAndWait()
+        data = path.read_bytes()
+        return data if data else None
+    except Exception:
+        return None
+    finally:
+        if path:
+            path.unlink(missing_ok=True)
 
 
 def _gtts_mp3(text: str, lang: str) -> bytes | None:

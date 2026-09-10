@@ -334,6 +334,14 @@
   font-weight: 600;
 }
 
+.map-frame {
+  width: 100%;
+  min-height: 220px;
+  margin-top: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
 .check-list {
   list-style: none;
   padding: 0;
