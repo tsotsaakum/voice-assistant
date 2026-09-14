@@ -125,9 +125,12 @@ Lentswe is a student voice assistant that runs on your PC.
 - **Maps** use OpenStreetMap Nominatim for a home pin. GPS is used only if you tap Guide me home in the browser.
 
 - **Tasks, goals, symptoms, profile** are saved in `data/lentswe.json` on this computer. That file is gitignored.
-
+- 
 - **Home address and Spotify link** stay in this browser’s localStorage, not in the JSON file.
 
 - Lentswe does **not** send SMS, call the police, or control a smart home.
 
 - **Email** is sent only if you set `SMTP_*` in `.env` and you ask to send a test message. The password is not written to logs or to `lentswe.json`.
+
+- **Cursor ai **
+Helped push all files from VS Code to Github successfully and all code was written by Sivuziwe Tsotsa . 
