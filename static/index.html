@@ -58,6 +58,7 @@
       <button type="button" data-skill="learn">Learning</button>
       <button type="button" data-skill="teach">Teach</button>
       <button type="button" data-skill="memory">Memory</button>
+      <button type="button" data-skill="docs">Docs</button>
       <button type="button" data-skill="deploy">Deploy</button>
       <button type="button" data-skill="access">Access</button>
     </nav>
@@ -190,6 +191,27 @@
           <button type="button" class="ask" data-ask="what is 2+2?">What is 2+2?</button>
           <button type="button" class="ask" data-ask="what is my name?">What is my name?</button>
           <button type="button" class="ask" data-ask="what do you remember about me?">What do you remember?</button>
+        </div>
+      </div>
+      <div class="skill-view" data-view="docs">
+        <h3>Business documents</h3>
+        <p>
+          Drop files into <code>docs/business/</code> on this computer — markdown, text, or PDF.
+          Lentswe retrieves a chunk, cites the filename, and says she does not know when nothing matches.
+          No embedding cloud key. Teach, Memory, and Deploy stay as they are.
+        </p>
+        <p id="docs-summary" class="hint">Checking the document folder…</p>
+        <ul id="docs-list" class="check-list"></ul>
+        <form id="docs-upload-form" class="mini-form">
+          <input id="docs-file" type="file" accept=".md,.markdown,.txt,.pdf,text/plain,text/markdown,application/pdf" />
+          <button type="submit">Add file</button>
+        </form>
+        <div class="chips">
+          <button type="button" id="docs-reindex">Rebuild index</button>
+          <button type="button" class="ask" data-ask="how much is the mutton bunny chow?">Mutton bunny chow price</button>
+          <button type="button" class="ask" data-ask="what's the refund policy for catering?">Refund policy</button>
+          <button type="button" class="ask" data-ask="what is the guest wifi password?">Guest wifi</button>
+          <button type="button" class="ask" data-ask="how much is a Tesla?">Unknown price (Tesla)</button>
         </div>
       </div>
       <div class="skill-view" data-view="deploy">

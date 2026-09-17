@@ -17,6 +17,13 @@ from src.deploy import is_deploy_query, spoken_help
 from src.intents import local_reply
 from src.knowledge import ask_to_be_taught, complete_pending, trained_reply
 from src.mail import try_send_email
+from src.rag import (
+    clear_last_sources,
+    grounded_reply,
+    looks_like_business_fact,
+    retrieve,
+    unknown_reply,
+)
 from src.memory import Memory
 from src.reminders import try_set_reminder
 from src.skills import music_reply, route_skill
@@ -80,6 +87,7 @@ def _reply(
     conversation_id: str | None = None,
 ) -> str:
     text = user_text.lower()
+    clear_last_sources()
     if any(p in text for p in EMERGENCY):
         return emergency_info()
     pending = complete_pending(conversation_id, user_text)
@@ -95,6 +103,13 @@ def _reply(
         return trained
     if is_deploy_query(user_text):
         return spoken_help(user_text)
+    hits = retrieve(user_text)
+    if hits:
+        if openai_enabled():
+            return reply(user_text, language_id, history, retrieved=hits)
+        return grounded_reply(hits)
+    if looks_like_business_fact(user_text):
+        return unknown_reply()
     if any(word in text for word in ("status", "are you running", "are you on")):
         return status_line()
     if any(word in text for word in ("what date", "today's date", "the date")):

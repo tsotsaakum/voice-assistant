@@ -80,3 +80,43 @@ def test_knowledge_api_teach_and_chat_recall(monkeypatch):
     assert deleted.status_code == 200
     empty = client.get("/api/knowledge").get_json()["questions"]
     assert all(q["id"] != entry_id for q in empty)
+
+
+def test_docs_api_chat_cites_source_and_refuses_unknown(monkeypatch, tmp_path):
+    monkeypatch.setattr("src.brain.openai_enabled", lambda: False)
+    from tests.test_rag import _seed_sample
+
+    _seed_sample(tmp_path)
+    client = app.test_client()
+    listed = client.get("/api/docs")
+    assert listed.status_code == 200
+    body = listed.get_json()
+    assert body["cloud_key"] is False
+    names = [row["name"] for row in body["files"]]
+    assert "price-list.md" in names
+
+    cid = client.post("/api/conversations").get_json()["conversation_id"]
+    chat = client.post(
+        "/api/chat",
+        json={
+            "text": "how much is the mutton bunny chow?",
+            "language": "english",
+            "conversation_id": cid,
+        },
+    )
+    payload = chat.get_json()
+    assert "R85" in payload["reply"]
+    assert payload["sources"]
+    assert payload["sources"][0]["file"] == "price-list.md"
+
+    unknown = client.post(
+        "/api/chat",
+        json={"text": "how much is a Tesla?", "conversation_id": cid},
+    )
+    assert "invent" in unknown.get_json()["reply"].lower()
+    assert "Tesla" not in unknown.get_json()["reply"]
+
+    rebuilt = client.post("/api/docs/reindex")
+    assert rebuilt.status_code == 200
+    assert rebuilt.get_json()["file_count"] >= 3
+

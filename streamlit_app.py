@@ -66,7 +66,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 st.title("Lentswe")
-st.caption("Easy Streamlit UI · talks to FastAPI `/api/chat` (local brain if the API is down).")
+st.caption("Easy Streamlit UI · talks to FastAPI `/api/chat` (local brain if the API is down). Same memory, Teach, Docs, and Deploy as the main page.")
 
 left, right = st.columns(2)
 with left:

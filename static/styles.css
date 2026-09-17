@@ -262,6 +262,15 @@
     margin-bottom: 0.25rem;
   }
 
+  .bubble .cite {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-style: normal;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+  }
+
 .dock {
   display: flex;
   align-items: center;

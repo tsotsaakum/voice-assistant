@@ -40,6 +40,42 @@ def test_fastapi_chat_and_knowledge_match_flask(monkeypatch):
     assert "Akum" not in other.json()["reply"]
 
 
+def test_fastapi_docs_retrieve_and_unknown_price(monkeypatch, tmp_path):
+    monkeypatch.setattr("src.brain.openai_enabled", lambda: False)
+    from tests.test_rag import _seed_sample
+
+    _seed_sample(tmp_path)
+    client = TestClient(app)
+    listed = client.get("/api/docs")
+    assert listed.status_code == 200
+    assert listed.json()["cloud_key"] is False
+    cid = client.post("/api/conversations").json()["conversation_id"]
+    chat = client.post(
+        "/api/chat",
+        json={
+            "text": "how much is the mutton bunny chow?",
+            "language": "english",
+            "conversation_id": cid,
+        },
+    )
+    assert chat.status_code == 200
+    body = chat.json()
+    assert "R85" in body["reply"]
+    assert body["sources"][0]["file"] == "price-list.md"
+    unknown = client.post(
+        "/api/chat",
+        json={"text": "how much is a Tesla?", "conversation_id": cid},
+    )
+    assert "invent" in unknown.json()["reply"].lower()
+    upload = client.post(
+        "/api/docs/upload",
+        files={"file": ("extra.md", b"Staff coffee is free.", "text/markdown")},
+    )
+    assert upload.status_code == 200
+    assert upload.json()["name"] == "extra.md"
+
+
+
 def test_flask_deploy_api(monkeypatch):
     monkeypatch.setattr("src.brain.openai_enabled", lambda: False)
     from app import app as flask_app

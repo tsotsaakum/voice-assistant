@@ -72,6 +72,7 @@ FastAPI (`uvicorn fastapi_app:app --port 8000`) and AWS (`infra/aws-cloudformati
 - Tasks, goals, timed reminders, symptom diary, and profile facts in `data/lentswe.json` (survives restart)
 - **Custom chat memory** keyed by `conversation_id` (typed and spoken). Refresh restores this session; **New chat** starts a clean one. Other tabs do not share the transcript.
 - **Teachable knowledge base** in `data/knowledge_base.json`. If Lentswe does not know a reply (and Groq is off), she asks you to teach her. Close matches count (~60%, same idea as the JSON chatbot tutorial). Taught Q&A survives restart and **New chat**.
+- **Business documents (RAG)** in `docs/business/`. She retrieves a chunk, cites the filename, and says she does not know when nothing matches. The index is `data/rag_index.json` on disk — no embedding cloud key. Groq is not allowed to invent a price or policy.
 - **Deployment & Cloud** tab: guided **Streamlit** easy UI, **Docker** pack, and **Vercel** hosting. **FastAPI** backend APIs and **AWS** storage + compute are wired (packaging files + `/api/deploy`) but not taught in the app.
 - Custom phrases in `config/commands.json` (open a URL or speak a fixed line)
 - Browser search via Python `webbrowser` (“search Google for …”)
@@ -101,6 +102,7 @@ FastAPI (`uvicorn fastapi_app:app --port 8000`) and AWS (`infra/aws-cloudformati
 | `src/store.py`     | Writes `data/lentswe.json` after every task/goal/symptom/profile change |
 | `src/conversations.py` | Per-chat custom memory: `conversation_id`, message list, active flag |
 | `src/knowledge.py` | Teachable JSON Q&A (`difflib.get_close_matches`, cutoff 0.6). Survives New chat |
+| `src/rag.py` | Business-document RAG: chunk `docs/business/`, TF-IDF index on disk, cite filename |
 | `src/deploy.py` | Deployment & Cloud status: Streamlit, Docker, Vercel (taught) plus FastAPI and AWS (wired) |
 | `src/cloud_storage.py` | AWS S3 put/sync with local `data/cloud-store` fallback when secrets are missing |
 | `src/service.py` | Shared chat payload for Flask and FastAPI |
@@ -144,6 +146,8 @@ Lentswe is a student voice assistant that runs on your PC.
 - **Chat text** (typed or transcribed) is processed on this PC. If a Groq key is set, that text is sent to Groq to generate a reply and choose tools. Each browser session keeps its own `conversation_id` so chats stay isolated. Transcripts for those sessions are saved in `data/conversations.json` on this computer (gitignored). **New chat** ends the session.
 
 - **Taught replies** you give when Lentswe says she does not know (or via the Teach tab) are saved in `data/knowledge_base.json` on this computer. That file is gitignored. These replies are shared across chats on this PC.
+
+- **Business documents** you drop in `docs/business/` (markdown, text, PDF) are chunked on this PC. The search index is `data/rag_index.json` (gitignored). No embedding API key is sent anywhere. Retrieved answers cite the source filename.
 
 - **Weather** uses Open-Meteo (live forecast). No OpenWeatherMap key is required.
 

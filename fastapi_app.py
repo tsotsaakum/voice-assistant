@@ -29,6 +29,9 @@ from src.knowledge import entries as knowledge_entries
 from src.knowledge import forget as forget_knowledge
 from src.knowledge import teach as teach_knowledge
 from src.languages import public_language_list
+from src.rag import build_index as rebuild_docs
+from src.rag import public_status as docs_public_status
+from src.rag import save_upload as save_doc_upload
 from src.service import chat_payload
 from src.store import load as load_memory
 from src.stt import transcribe_wav
@@ -90,6 +93,29 @@ def remove_knowledge(entry_id: str):
 @app.get("/api/status")
 def status():
     return {"groq": openai_enabled(), "model": chat_model()}
+
+
+@app.get("/api/docs")
+def docs_status():
+    return docs_public_status()
+
+
+@app.post("/api/docs/reindex")
+def docs_reindex():
+    rebuild_docs()
+    return docs_public_status()
+
+
+@app.post("/api/docs/upload")
+async def docs_upload(file: UploadFile = File(...)):
+    content = await file.read()
+    saved = save_doc_upload(file.filename or "", content)
+    if not saved:
+        raise HTTPException(
+            status_code=400,
+            detail="Need a .md, .txt, or .pdf file with content.",
+        )
+    return saved
 
 
 @app.get("/api/deploy")

@@ -144,7 +144,7 @@ async function startNewChat() {
   setStatus("New chat. This session starts with a clean conversational memory.");
 }
 
-function addBubble(role, text, caption) {
+function addBubble(role, text, caption, sources) {
   hideEmpty();
   const div = document.createElement("div");
   div.className = "bubble " + role;
@@ -154,6 +154,19 @@ function addBubble(role, text, caption) {
     div.appendChild(small);
   }
   div.appendChild(document.createTextNode(text));
+  if (sources && sources.length) {
+    const cite = document.createElement("em");
+    cite.className = "cite";
+    const names = [];
+    sources.forEach(function (row) {
+      const file = row && row.file;
+      if (file && names.indexOf(file) === -1) names.push(file);
+    });
+    if (names.length) {
+      cite.textContent = "Source: " + names.join(", ");
+      div.appendChild(cite);
+    }
+  }
   logEl.appendChild(div);
   logEl.scrollTop = logEl.scrollHeight;
 }
@@ -309,7 +322,7 @@ async function sendText(text) {
   }
   rememberConversation(data);
   history.push({ role: "assistant", content: data.reply });
-  addBubble("bot", data.reply, "Lentswe");
+  addBubble("bot", data.reply, "Lentswe", data.sources);
   if (data.active === false) {
     setStatus("This chat session has ended. Start a new chat.");
     return;
@@ -345,7 +358,7 @@ async function sendAudio(blob) {
   history.push({ role: "user", content: data.transcript });
   history.push({ role: "assistant", content: data.reply });
   addBubble("user", data.transcript, "You · " + data.language);
-  addBubble("bot", data.reply, "Lentswe");
+  addBubble("bot", data.reply, "Lentswe", data.sources);
   if (data.active === false) {
     setStatus("This chat session has ended. Start a new chat.");
     return;
@@ -626,6 +639,81 @@ async function packPlatform(platformId) {
   }
 }
 
+async function refreshDocs() {
+  const list = document.getElementById("docs-list");
+  const summary = document.getElementById("docs-summary");
+  if (!list) return;
+  try {
+    const res = await fetch("/api/docs");
+    if (!res.ok) return;
+    const data = await res.json();
+    const files = data.files || [];
+    if (summary) {
+      summary.textContent = files.length
+        ? files.length + " file" + (files.length === 1 ? "" : "s") + ", " +
+          (data.chunk_count || 0) + " chunks on disk. No cloud embedding key."
+        : "No business files yet. Drop .md, .txt, or .pdf into docs/business/.";
+    }
+    list.innerHTML = "";
+    files.forEach(function (row) {
+      const li = document.createElement("li");
+      const pair = document.createElement("div");
+      pair.className = "teach-pair";
+      const name = document.createElement("strong");
+      name.textContent = row.name || "";
+      const meta = document.createElement("span");
+      meta.textContent = (row.chunks || 0) + " chunk" + (row.chunks === 1 ? "" : "s");
+      pair.appendChild(name);
+      pair.appendChild(meta);
+      li.appendChild(pair);
+      list.appendChild(li);
+    });
+  } catch (err) {
+    if (summary) summary.textContent = "Could not load the document index.";
+  }
+}
+
+async function rebuildDocs() {
+  setStatus("Rebuilding the document index…");
+  try {
+    const res = await fetch("/api/docs/reindex", { method: "POST" });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      setStatus(data.detail || "Could not rebuild the index.");
+      return;
+    }
+    await refreshDocs();
+    setStatus("Indexed " + (data.chunk_count || 0) + " chunks from " + (data.file_count || 0) + " file(s).");
+  } catch (err) {
+    setStatus("Could not reach the docs API.");
+  }
+}
+
+document.getElementById("docs-reindex")?.addEventListener("click", function () {
+  rebuildDocs();
+});
+
+document.getElementById("docs-upload-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const input = document.getElementById("docs-file");
+  const file = input && input.files && input.files[0];
+  if (!file) {
+    setStatus("Choose a .md, .txt, or .pdf file first.");
+    return;
+  }
+  const body = new FormData();
+  body.append("file", file, file.name);
+  const res = await fetch("/api/docs/upload", { method: "POST", body: body });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Could not add that file.");
+    return;
+  }
+  if (input) input.value = "";
+  await refreshDocs();
+  setStatus("Added " + (data.name || file.name) + " and rebuilt the index.");
+});
+
 async function refreshDeploy() {
   const grid = document.getElementById("deploy-teach");
   const wired = document.getElementById("deploy-wired");
@@ -694,6 +782,7 @@ function openSkill(name) {
     view.hidden = view.getAttribute("data-view") !== name;
   });
   if (name === "teach") refreshKnowledgeList();
+  if (name === "docs") refreshDocs();
   if (name === "deploy") refreshDeploy();
   if (name === "tasks" || name === "goals") refreshMemoryLists();
 }

@@ -13,6 +13,7 @@ from src.geo import driving_summary
 from src.mail import send_email
 from src.languages import SOUTH_AFRICAN_LANGUAGES
 from src.memory import lasting_notes
+from src.rag import format_context
 from src.tools import emergency_info
 from src.weather import forecast_place
 
@@ -189,7 +190,8 @@ TOOL_DEFINITIONS = [
 ]
 
 
-def build_system_prompt(language_name: str) -> str:
+def build_system_prompt(language_name: str, retrieved=None) -> str:
+    docs = format_context(retrieved or [])
     return f"""You are Lentswe, not Aria, not Alexa.
 
 <persona>
@@ -197,10 +199,17 @@ Warm, brief South African voice. 2–4 spoken sentences. Light SA English only w
 </persona>
 
 <scope>
-You help with: conversation, live weather (tool only), tasks/goals/symptoms/profile in JSON memory, SA emergency numbers, travel talk, pointing people to the Home tab for maps, and Deployment & Cloud (Streamlit easy UI, Docker pack, Vercel hosting). FastAPI and AWS are already wired — do not teach those two.
-You do not: diagnose, prescribe, clone voices, pirate music, smart-home control, or invent °C.
+You help with: conversation, live weather (tool only), tasks/goals/symptoms/profile in JSON memory, SA emergency numbers, travel talk, pointing people to the Home tab for maps, Deployment & Cloud (Streamlit easy UI, Docker pack, Vercel hosting), and business documents retrieved from docs/business/. FastAPI and AWS are already wired — do not teach those two.
+You do not: diagnose, prescribe, clone voices, pirate music, smart-home control, invent °C, or invent prices, fees, hours, or policies.
 Always reply in {language_name} only unless they asked to switch.
 </scope>
+
+<business_documents>
+Prices, fees, hours, wifi, and policies come ONLY from the retrieved chunks below. Quote the source filename (for example price-list.md). If the user asks for a price or policy and the chunks do not contain it, say you do not have that in the business documents. Never invent a rand amount.
+
+Retrieved:
+{docs}
+</business_documents>
 
 <ambiguity>
 If a town, origin, or destination is missing, ask — do not guess Johannesburg. If it is unclear whether they mean a task or a goal, ask one short question.
@@ -298,7 +307,13 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> str:
     return f"Unknown tool: {name}"
 
 
-def chat_turn(user_text: str, language_id: str, history: list[dict], api_key: str) -> str:
+def chat_turn(
+    user_text: str,
+    language_id: str,
+    history: list[dict],
+    api_key: str,
+    retrieved=None,
+) -> str:
     from openai import OpenAI
 
     language_name = SOUTH_AFRICAN_LANGUAGES.get(language_id, SOUTH_AFRICAN_LANGUAGES["english"]).name
@@ -306,7 +321,9 @@ def chat_turn(user_text: str, language_id: str, history: list[dict], api_key: st
 
     client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL") or None)
     model = chat_model()
-    messages: list[dict] = [{"role": "system", "content": build_system_prompt(language_name)}]
+    messages: list[dict] = [
+        {"role": "system", "content": build_system_prompt(language_name, retrieved=retrieved)}
+    ]
     for turn in history[-16:]:
         role = turn.get("role")
         content = turn.get("content")
