@@ -31,7 +31,12 @@ def chat_model() -> str:
     raw = (os.getenv("CHAT_MODEL") or "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
     return DEAD_CHAT_MODELS.get(raw, raw)
 
-def reply(user_text: str, language_id: str, history: list[dict]) -> str:
+def reply(
+    user_text: str,
+    language_id: str,
+    history: list[dict],
+    retrieved=None,
+) -> str:
     if language_id not in SOUTH_AFRICAN_LANGUAGES:
         language_id = guess_language(user_text) or "english"
     api_key = _api_key()
@@ -39,7 +44,9 @@ def reply(user_text: str, language_id: str, history: list[dict]) -> str:
         try:
             from src.assistant import chat_turn
 
-            return chat_turn(user_text, language_id, history, api_key)
+            return chat_turn(
+                user_text, language_id, history, api_key, retrieved=retrieved
+            )
         except Exception:
             traceback.print_exc()
             from src.tools import run_tool

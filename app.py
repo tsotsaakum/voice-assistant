@@ -26,6 +26,9 @@ from src.stt import transcribe_wav
 from src.knowledge import entries as knowledge_entries
 from src.knowledge import forget as forget_knowledge
 from src.knowledge import teach as teach_knowledge
+from src.rag import build_index as rebuild_docs
+from src.rag import public_status as docs_public_status
+from src.rag import save_upload as save_doc_upload
 from src.service import chat_payload
 from src.store import load as load_memory
 from src.tts import speak
@@ -76,6 +79,28 @@ def remove_knowledge(entry_id: str):
 @app.get("/api/status")
 def status():
     return jsonify({"groq": openai_enabled(), "model": chat_model()})
+
+
+@app.get("/api/docs")
+def docs_status():
+    return jsonify(docs_public_status())
+
+
+@app.post("/api/docs/reindex")
+def docs_reindex():
+    rebuild_docs()
+    return jsonify(docs_public_status())
+
+
+@app.post("/api/docs/upload")
+def docs_upload():
+    uploaded = request.files.get("file")
+    if not uploaded:
+        return jsonify({"detail": "Need a .md, .txt, or .pdf file with content."}), 400
+    saved = save_doc_upload(uploaded.filename or "", uploaded.read())
+    if not saved:
+        return jsonify({"detail": "Need a .md, .txt, or .pdf file with content."}), 400
+    return jsonify(saved)
 
 
 @app.get("/api/deploy")

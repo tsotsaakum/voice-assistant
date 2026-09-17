@@ -73,6 +73,7 @@ def fastapi_platform() -> dict:
             "GET /api/status",
             "POST /api/chat",
             "GET /api/knowledge",
+            "GET /api/docs",
             "GET /api/deploy",
         ],
         "blocked": [] if ready else ["fastapi_app.py missing"],

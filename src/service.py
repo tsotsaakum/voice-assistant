@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from src.brain import think
 from src.conversations import get_or_create, public_payload, snapshot
+from src.rag import last_sources
 
 
 def chat_payload(
@@ -21,4 +22,5 @@ def chat_payload(
         "conversation_id": live["conversation_id"],
         "active": live["active"],
         "turn_count": live["turn_count"],
+        "sources": last_sources(),
     }
