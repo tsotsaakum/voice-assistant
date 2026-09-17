@@ -54,3 +54,29 @@ def test_ended_conversation_via_api(monkeypatch):
     chat = client.post("/api/chat", json={"text": "hello", "conversation_id": cid})
     assert "ended" in chat.get_json()["reply"].lower()
     assert chat.get_json()["active"] is False
+
+
+def test_knowledge_api_teach_and_chat_recall(monkeypatch):
+    monkeypatch.setattr("src.brain.openai_enabled", lambda: False)
+    client = app.test_client()
+    created = client.post(
+        "/api/knowledge",
+        json={"question": "hello", "answer": "hey there"},
+    )
+    assert created.status_code == 201
+    listed = client.get("/api/knowledge")
+    questions = listed.get_json()["questions"]
+    assert any(q["question"] == "hello" and q["answer"] == "hey there" for q in questions)
+
+    cid = client.post("/api/conversations").get_json()["conversation_id"]
+    chat = client.post(
+        "/api/chat",
+        json={"text": "hello", "language": "english", "conversation_id": cid},
+    )
+    assert chat.get_json()["reply"] == "hey there"
+
+    entry_id = created.get_json()["id"]
+    deleted = client.delete("/api/knowledge/" + entry_id)
+    assert deleted.status_code == 200
+    empty = client.get("/api/knowledge").get_json()["questions"]
+    assert all(q["id"] != entry_id for q in empty)

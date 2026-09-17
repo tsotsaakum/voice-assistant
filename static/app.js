@@ -512,6 +512,53 @@ async function refreshMemoryLists() {
   } catch (err) {
     return;
   }
+  refreshKnowledgeList();
+}
+
+async function refreshKnowledgeList() {
+  const ul = document.getElementById("teach-list");
+  const hint = document.getElementById("teach-saved");
+  if (!ul) return;
+  try {
+    const res = await fetch("/api/knowledge");
+    if (!res.ok) return;
+    const data = await res.json();
+    const rows = data.questions || [];
+    ul.innerHTML = "";
+    if (hint) {
+      hint.textContent = rows.length
+        ? rows.length + " taught repl" + (rows.length === 1 ? "y" : "ies") + " in knowledge_base.json. Survives New chat."
+        : "No taught replies yet. Ask something she does not know, or use the form.";
+    }
+    rows.forEach(function (row) {
+      const li = document.createElement("li");
+      const pair = document.createElement("div");
+      pair.className = "teach-pair";
+      const q = document.createElement("strong");
+      q.textContent = row.question || "";
+      const a = document.createElement("span");
+      a.textContent = row.answer || "";
+      pair.appendChild(q);
+      pair.appendChild(a);
+      li.appendChild(pair);
+      const del = document.createElement("button");
+      del.type = "button";
+      del.textContent = "Forget";
+      del.addEventListener("click", function () {
+        fetch("/api/knowledge/" + encodeURIComponent(row.id), { method: "DELETE" })
+          .then(function () {
+            refreshKnowledgeList();
+          })
+          .catch(function () {
+            setStatus("Could not forget that reply.");
+          });
+      });
+      li.appendChild(del);
+      ul.appendChild(li);
+    });
+  } catch (err) {
+    return;
+  }
 }
 
 function addItem(key, ulId, value) {
@@ -538,6 +585,8 @@ function openSkill(name) {
   document.querySelectorAll(".skill-view").forEach(function (view) {
     view.hidden = view.getAttribute("data-view") !== name;
   });
+  if (name === "teach") refreshKnowledgeList();
+  if (name === "tasks" || name === "goals") refreshMemoryLists();
 }
 
 document.querySelectorAll(".skill-row [data-skill]").forEach(function (btn) {
@@ -568,6 +617,32 @@ document.getElementById("goal-form")?.addEventListener("submit", function (event
   if (!value) return;
   input.value = "";
   sendText("my goal is " + value);
+});
+
+document.getElementById("teach-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const qEl = document.getElementById("teach-question");
+  const aEl = document.getElementById("teach-answer");
+  const question = (qEl && qEl.value || "").trim();
+  const answer = (aEl && aEl.value || "").trim();
+  if (!question || !answer) {
+    setStatus("Type both a phrase and a reply.");
+    return;
+  }
+  const res = await fetch("/api/knowledge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question: question, answer: answer }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Could not save that reply.");
+    return;
+  }
+  if (qEl) qEl.value = "";
+  if (aEl) aEl.value = "";
+  await refreshKnowledgeList();
+  setStatus("Learned: “" + question + "” → “" + answer + "”");
 });
 
 function bindA11y(id, className) {

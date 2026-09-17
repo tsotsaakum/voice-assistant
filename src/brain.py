@@ -13,6 +13,8 @@ from src.conversations import (
     stated_name_reply,
 )
 from src.custom_commands import try_custom_command
+from src.intents import local_reply
+from src.knowledge import ask_to_be_taught, complete_pending, trained_reply
 from src.mail import try_send_email
 from src.memory import Memory
 from src.reminders import try_set_reminder
@@ -59,7 +61,7 @@ def think(
                 memory.add(role, content)
         history = memory.history()
 
-    answer = _reply(user_text, language_id, history)
+    answer = _reply(user_text, language_id, history, conversation_id)
     _remember(conv, user_text, answer)
     return answer
 
@@ -70,15 +72,26 @@ def _remember(conv, user_text: str, answer: str) -> None:
     record_turn(conv.conversation_id, user_text, answer)
 
 
-def _reply(user_text: str, language_id: str, history: list[dict]) -> str:
+def _reply(
+    user_text: str,
+    language_id: str,
+    history: list[dict],
+    conversation_id: str | None = None,
+) -> str:
     text = user_text.lower()
     if any(p in text for p in EMERGENCY):
         return emergency_info()
+    pending = complete_pending(conversation_id, user_text)
+    if pending:
+        return pending
     if is_name_question(user_text):
         return name_reply(history)
     stated = parse_stated_name(user_text)
     if stated and not openai_enabled():
         return stated_name_reply(stated)
+    trained = trained_reply(user_text)
+    if trained:
+        return trained
     if any(word in text for word in ("status", "are you running", "are you on")):
         return status_line()
     if any(word in text for word in ("what date", "today's date", "the date")):
@@ -139,4 +152,7 @@ def _reply(user_text: str, language_id: str, history: list[dict]) -> str:
     skill = route_skill(user_text)
     if skill:
         return skill
-    return reply(user_text, language_id, history)
+    found = local_reply(user_text, language_id)
+    if found:
+        return found
+    return ask_to_be_taught(user_text, conversation_id)

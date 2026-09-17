@@ -370,6 +370,50 @@
   font-weight: 600;
 }
 
+.teach-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.6rem 0;
+}
+
+.teach-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.teach-row input {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.teach-form > button {
+  align-self: flex-start;
+  background: var(--leaf);
+  color: var(--sand);
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.teach-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.teach-pair strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.teach-pair span {
+  color: var(--mute);
+  font-size: 0.88rem;
+}
+
 .map-frame {
   width: 100%;
   min-height: 220px;

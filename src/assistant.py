@@ -214,6 +214,10 @@ Weigh weather + goals + health + open tasks together when the user asks somethin
 {lasting_notes()}
 </lasting_memory>
 
+<taught_knowledge>
+If LASTING MEMORY lists a taught reply that matches what the user just said, use that answer. Those pairs survive New chat. Do not invent extra taught facts.
+</taught_knowledge>
+
 <conversation_memory>
 The messages in this request are only THIS chat session. Remember names and facts the user said here and use them later in this same conversation_id. Other chats are isolated. If they start a new session, do not carry those spoken facts over.
 </conversation_memory>

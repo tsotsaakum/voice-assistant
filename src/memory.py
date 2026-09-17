@@ -9,6 +9,7 @@ tasks/goals/health into Groq as lasting notes.
 from __future__ import annotations
 
 from src import store
+from src.knowledge import lasting_lines
 
 
 class Memory:
@@ -52,5 +53,6 @@ def lasting_notes() -> str:
         "Open tasks: " + ("; ".join(tasks) if tasks else "none"),
         "Goals: " + ("; ".join(goals) if goals else "none"),
         "Recent symptom log: " + ("; ".join(symptoms) if symptoms else "none"),
+        "Taught replies (user-trained, prefer these): " + lasting_lines(),
     ]
     return "\n".join(lines)
