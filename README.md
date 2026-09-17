@@ -53,7 +53,17 @@ Text-only loop (same memory + tools, no mic):
 python -m src.assistant
 ```
 
+## Deployment & Cloud
 
+Open the **Deploy** tab in the Lentswe page. The guided path is Streamlit, Docker, and Vercel:
+
+```powershell
+streamlit run streamlit_app.py --server.port 8501
+docker compose up --build
+npx vercel --prod
+```
+
+FastAPI (`uvicorn fastapi_app:app --port 8000`) and AWS (`infra/aws-cloudformation.yml`, optional `AWS_S3_BUCKET`) ship packed. They do not need a live cloud key for the app to run; without `VERCEL_TOKEN` or AWS credentials the in-app flow still shows the files and uses a local storage fallback.
 
 ## What you can do
 
@@ -62,6 +72,7 @@ python -m src.assistant
 - Tasks, goals, timed reminders, symptom diary, and profile facts in `data/lentswe.json` (survives restart)
 - **Custom chat memory** keyed by `conversation_id` (typed and spoken). Refresh restores this session; **New chat** starts a clean one. Other tabs do not share the transcript.
 - **Teachable knowledge base** in `data/knowledge_base.json`. If Lentswe does not know a reply (and Groq is off), she asks you to teach her. Close matches count (~60%, same idea as the JSON chatbot tutorial). Taught Q&A survives restart and **New chat**.
+- **Deployment & Cloud** tab: guided **Streamlit** easy UI, **Docker** pack, and **Vercel** hosting. **FastAPI** backend APIs and **AWS** storage + compute are wired (packaging files + `/api/deploy`) but not taught in the app.
 - Custom phrases in `config/commands.json` (open a URL or speak a fixed line)
 - Browser search via Python `webbrowser` (“search Google for …”)
 - Optional SMTP test mail (“send an email to test@example.com saying hello”)
@@ -90,6 +101,14 @@ python -m src.assistant
 | `src/store.py`     | Writes `data/lentswe.json` after every task/goal/symptom/profile change |
 | `src/conversations.py` | Per-chat custom memory: `conversation_id`, message list, active flag |
 | `src/knowledge.py` | Teachable JSON Q&A (`difflib.get_close_matches`, cutoff 0.6). Survives New chat |
+| `src/deploy.py` | Deployment & Cloud status: Streamlit, Docker, Vercel (taught) plus FastAPI and AWS (wired) |
+| `src/cloud_storage.py` | AWS S3 put/sync with local `data/cloud-store` fallback when secrets are missing |
+| `src/service.py` | Shared chat payload for Flask and FastAPI |
+| `fastapi_app.py` | FastAPI backend APIs (same brain as `app.py`) |
+| `streamlit_app.py` | Easy Streamlit UI |
+| `Dockerfile` / `docker-compose.yml` | Pack Streamlit, the Lentswe page, and the API |
+| `vercel.json` / `api/` | Vercel hosting entry |
+| `infra/aws-cloudformation.yml` | AWS S3 storage + ECS Fargate compute |
 | `src/memory.py`    | Session chat plus a snapshot injected into every Groq request           |
 | `src/mms_tts.py`   | Local Simba / MMS VITS voices                                           |
 | `src/weather.py`   | Open-Meteo (no API key)                                                 |

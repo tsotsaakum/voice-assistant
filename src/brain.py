@@ -13,6 +13,7 @@ from src.conversations import (
     stated_name_reply,
 )
 from src.custom_commands import try_custom_command
+from src.deploy import is_deploy_query, spoken_help
 from src.intents import local_reply
 from src.knowledge import ask_to_be_taught, complete_pending, trained_reply
 from src.mail import try_send_email
@@ -92,6 +93,8 @@ def _reply(
     trained = trained_reply(user_text)
     if trained:
         return trained
+    if is_deploy_query(user_text):
+        return spoken_help(user_text)
     if any(word in text for word in ("status", "are you running", "are you on")):
         return status_line()
     if any(word in text for word in ("what date", "today's date", "the date")):

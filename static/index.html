@@ -58,6 +58,7 @@
       <button type="button" data-skill="learn">Learning</button>
       <button type="button" data-skill="teach">Teach</button>
       <button type="button" data-skill="memory">Memory</button>
+      <button type="button" data-skill="deploy">Deploy</button>
       <button type="button" data-skill="access">Access</button>
     </nav>
 
@@ -189,6 +190,20 @@
           <button type="button" class="ask" data-ask="what is 2+2?">What is 2+2?</button>
           <button type="button" class="ask" data-ask="what is my name?">What is my name?</button>
           <button type="button" class="ask" data-ask="what do you remember about me?">What do you remember?</button>
+        </div>
+      </div>
+      <div class="skill-view" data-view="deploy">
+        <h3>Deployment &amp; Cloud</h3>
+        <p id="deploy-summary" class="hint">Checking packaging…</p>
+        <div id="deploy-teach" class="deploy-grid" aria-label="Guided platforms"></div>
+        <h4 class="deploy-wired-title">Already wired</h4>
+        <ul id="deploy-wired" class="wired-list" aria-label="FastAPI and AWS"></ul>
+        <p id="deploy-blocked" class="hint"></p>
+        <div class="chips">
+          <button type="button" class="ask" data-ask="how do I run the Streamlit easy UI?">Streamlit easy UI</button>
+          <button type="button" class="ask" data-ask="pack with docker">Pack with Docker</button>
+          <button type="button" class="ask" data-ask="how do I host on Vercel?">Host on Vercel</button>
+          <button type="button" class="ask" data-ask="deploy status">Deploy status</button>
         </div>
       </div>
       <div class="skill-view" data-view="access">

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -9,7 +10,6 @@ from flask import Flask, Response, jsonify, redirect, request, send_from_directo
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env", override=True)
 
-from src.brain import think
 from src.chat import chat_model, openai_enabled
 from src.conversations import (
     append_message,
@@ -18,12 +18,15 @@ from src.conversations import (
     public_payload,
     snapshot,
 )
+from src.deploy import pack as pack_platform
+from src.deploy import public_status
 from src.geo import geocode_place
 from src.languages import public_language_list
 from src.stt import transcribe_wav
 from src.knowledge import entries as knowledge_entries
 from src.knowledge import forget as forget_knowledge
 from src.knowledge import teach as teach_knowledge
+from src.service import chat_payload
 from src.store import load as load_memory
 from src.tts import speak
 
@@ -73,6 +76,19 @@ def remove_knowledge(entry_id: str):
 @app.get("/api/status")
 def status():
     return jsonify({"groq": openai_enabled(), "model": chat_model()})
+
+
+@app.get("/api/deploy")
+def deploy_status():
+    return jsonify(public_status())
+
+
+@app.post("/api/deploy/<platform_id>")
+def deploy_pack(platform_id: str):
+    result = pack_platform(platform_id)
+    if not result.get("ok") and result.get("detail") == "Unknown platform.":
+        return jsonify(result), 404
+    return jsonify(result)
 
 
 @app.get("/api/reminders/due")
@@ -196,17 +212,11 @@ def speak_route():
 
 
 def _chat_payload(text: str, language: str, history: list, conversation_id: str | None) -> dict:
-    conv = get_or_create(conversation_id)
-    answer = think(text, language, history, conversation_id=conv.conversation_id)
-    live = snapshot(conv.conversation_id) or public_payload(conv)
-    return {
-        "reply": answer,
-        "language": language,
-        "conversation_id": live["conversation_id"],
-        "active": live["active"],
-        "turn_count": live["turn_count"],
-    }
+    return chat_payload(text, language, history, conversation_id)
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=7000, debug=True, load_dotenv=False)
+    host = os.getenv("LENTSWE_HOST") or "127.0.0.1"
+    port = int(os.getenv("LENTSWE_PORT") or "7000")
+    debug = os.getenv("LENTSWE_DEBUG", "1") != "0"
+    app.run(host=host, port=port, debug=debug, load_dotenv=False)

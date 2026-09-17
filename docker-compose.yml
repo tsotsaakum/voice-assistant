@@ -1,0 +1,32 @@
+services:
+  streamlit:
+    build: .
+    image: lentswe:local
+    ports:
+      - "8501:8501"
+    environment:
+      LENTSWE_HOST: "0.0.0.0"
+      LENTSWE_API_URL: "http://api:8000"
+    depends_on:
+      - api
+    command: ["streamlit", "run", "streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+
+  web:
+    image: lentswe:local
+    build: .
+    ports:
+      - "7000:7000"
+    environment:
+      LENTSWE_HOST: "0.0.0.0"
+      LENTSWE_PORT: "7000"
+      LENTSWE_DEBUG: "0"
+    command: ["python", "app.py"]
+
+  api:
+    image: lentswe:local
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      LENTSWE_HOST: "0.0.0.0"
+    command: ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]

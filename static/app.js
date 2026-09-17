@@ -561,6 +561,114 @@ async function refreshKnowledgeList() {
   }
 }
 
+function badgeLabel(item) {
+  if (item && item.live) return "ready";
+  if (item && item.ready) return "packed";
+  return "missing";
+}
+
+function renderDeployCard(item) {
+  const card = document.createElement("article");
+  card.className = "deploy-card";
+  card.setAttribute("data-platform", item.id);
+
+  const role = document.createElement("p");
+  role.className = "role";
+  role.textContent = item.role || "";
+  card.appendChild(role);
+
+  const title = document.createElement("h4");
+  title.textContent = item.name || item.id;
+  card.appendChild(title);
+
+  const how = document.createElement("p");
+  how.textContent = item.how || "";
+  card.appendChild(how);
+
+  const meta = document.createElement("p");
+  meta.className = "deploy-meta";
+  const cmd = document.createElement("code");
+  cmd.textContent = item.command || "";
+  meta.appendChild(cmd);
+  card.appendChild(meta);
+
+  const row = document.createElement("div");
+  row.className = "mini-form";
+  const badge = document.createElement("span");
+  badge.className = "badge " + (item.live ? "ready" : "blocked");
+  badge.textContent = badgeLabel(item);
+  row.appendChild(badge);
+
+  const action = document.createElement("button");
+  action.type = "button";
+  action.textContent = item.id === "docker" ? "Pack" : item.id === "vercel" ? "Prepare host" : "Check UI";
+  action.addEventListener("click", function () {
+    packPlatform(item.id);
+  });
+  row.appendChild(action);
+  card.appendChild(row);
+  return card;
+}
+
+async function packPlatform(platformId) {
+  setStatus("Working on " + platformId + "…");
+  try {
+    const res = await fetch("/api/deploy/" + encodeURIComponent(platformId), { method: "POST" });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      setStatus(data.detail || "Could not pack that platform.");
+      return;
+    }
+    await refreshDeploy();
+    setStatus(data.detail || data.action || ("Packed " + platformId));
+  } catch (err) {
+    setStatus("Could not reach the deploy API.");
+  }
+}
+
+async function refreshDeploy() {
+  const grid = document.getElementById("deploy-teach");
+  const wired = document.getElementById("deploy-wired");
+  const summary = document.getElementById("deploy-summary");
+  const blockedEl = document.getElementById("deploy-blocked");
+  if (!grid) return;
+  try {
+    const res = await fetch("/api/deploy");
+    if (!res.ok) return;
+    const data = await res.json();
+    if (summary) summary.textContent = data.summary || "";
+    grid.innerHTML = "";
+    (data.teach || []).forEach(function (item) {
+      grid.appendChild(renderDeployCard(item));
+    });
+    if (wired) {
+      wired.innerHTML = "";
+      (data.wired || []).forEach(function (item) {
+        const li = document.createElement("li");
+        const label = document.createElement("span");
+        label.textContent = item.name + " · " + (item.role || "");
+        const badge = document.createElement("span");
+        badge.className = "badge " + (item.live ? "ready" : "blocked");
+        badge.textContent = item.live ? "wired" : (item.blocked && item.blocked.length ? "needs secrets" : "packed");
+        li.appendChild(label);
+        li.appendChild(badge);
+        wired.appendChild(li);
+      });
+    }
+    const blocked = data.blocked || [];
+    if (blockedEl) {
+      const teachBlocked = blocked.filter(function (row) {
+        return row.platform === "streamlit" || row.platform === "docker" || row.platform === "vercel";
+      });
+      blockedEl.textContent = teachBlocked.length
+        ? "Blocked for live run: " + teachBlocked.map(function (row) { return row.platform + " (" + row.reason + ")"; }).join(" · ")
+        : "Streamlit, Docker config, and Vercel config are packed on this machine.";
+    }
+  } catch (err) {
+    if (summary) summary.textContent = "Could not load deploy status.";
+  }
+}
+
 function addItem(key, ulId, value) {
   const text = (value || "").trim();
   if (!text) return false;
@@ -586,6 +694,7 @@ function openSkill(name) {
     view.hidden = view.getAttribute("data-view") !== name;
   });
   if (name === "teach") refreshKnowledgeList();
+  if (name === "deploy") refreshDeploy();
   if (name === "tasks" || name === "goals") refreshMemoryLists();
 }
 

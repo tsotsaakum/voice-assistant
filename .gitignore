@@ -10,3 +10,4 @@ __pycache__/
 data/lentswe.json
 data/conversations.json
 data/knowledge_base.json
+data/cloud-store/
