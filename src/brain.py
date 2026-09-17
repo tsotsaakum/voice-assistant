@@ -2,6 +2,16 @@
 
 from src.browse import open_web_search
 from src.chat import openai_enabled, reply
+from src.conversations import (
+    SESSION_ENDED,
+    get_or_create,
+    is_name_question,
+    name_reply,
+    parse_stated_name,
+    record_turn,
+    seed_client_history,
+    stated_name_reply,
+)
 from src.custom_commands import try_custom_command
 from src.mail import try_send_email
 from src.memory import Memory
@@ -13,23 +23,62 @@ from src.wake_word import is_wake_only, strip_wake, wake_greeting
 from src.weather import forecast, is_pack_query, is_run_query, is_weather_query, pack_for_trip, run_today_reply
 
 
-def think(user_text: str, language_id: str, history: list[dict]) -> str:
+def think(
+    user_text: str,
+    language_id: str,
+    history: list[dict] | None = None,
+    conversation_id: str | None = None,
+) -> str:
+    history = history or []
+    conv = None
+    if conversation_id is not None:
+        conv = get_or_create(conversation_id)
+        if not conv.active:
+            return SESSION_ENDED
+
     if is_wake_only(user_text):
-        return wake_greeting()
+        answer = wake_greeting()
+        _remember(conv, user_text, answer)
+        return answer
     user_text = strip_wake(user_text)
     if not user_text:
-        return wake_greeting()
+        answer = wake_greeting()
+        _remember(conv, "hello", answer)
+        return answer
 
-    memory = Memory()
-    for turn in history:
-        role = turn.get("role")
-        content = turn.get("content")
-        if role in {"user", "assistant"} and content:
-            memory.add(role, content)
+    if conv is not None:
+        if conv.turn_count() == 0:
+            seed_client_history(conv, history, user_text)
+        history = conv.chat_history()
+    else:
+        memory = Memory()
+        for turn in history:
+            role = turn.get("role")
+            content = turn.get("content")
+            if role in {"user", "assistant"} and content:
+                memory.add(role, content)
+        history = memory.history()
 
+    answer = _reply(user_text, language_id, history)
+    _remember(conv, user_text, answer)
+    return answer
+
+
+def _remember(conv, user_text: str, answer: str) -> None:
+    if conv is None or not conv.active:
+        return
+    record_turn(conv.conversation_id, user_text, answer)
+
+
+def _reply(user_text: str, language_id: str, history: list[dict]) -> str:
     text = user_text.lower()
     if any(p in text for p in EMERGENCY):
         return emergency_info()
+    if is_name_question(user_text):
+        return name_reply(history)
+    stated = parse_stated_name(user_text)
+    if stated and not openai_enabled():
+        return stated_name_reply(stated)
     if any(word in text for word in ("status", "are you running", "are you on")):
         return status_line()
     if any(word in text for word in ("what date", "today's date", "the date")):
@@ -78,7 +127,7 @@ def think(user_text: str, language_id: str, history: list[dict]) -> str:
         tool = run_tool(user_text)
         if tool:
             return tool
-        return reply(user_text, language_id, memory.history())
+        return reply(user_text, language_id, history)
 
     if is_weather_query(user_text):
         return forecast(user_text)
@@ -90,4 +139,4 @@ def think(user_text: str, language_id: str, history: list[dict]) -> str:
     skill = route_skill(user_text)
     if skill:
         return skill
-    return reply(user_text, language_id, memory.history())
+    return reply(user_text, language_id, history)
