@@ -6,6 +6,9 @@ services:
       - "8501:8501"
     environment:
       LENTSWE_HOST: "0.0.0.0"
+      LENTSWE_API_URL: "http://api:8000"
+    depends_on:
+      - api
     command: ["streamlit", "run", "streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
 
   web:
