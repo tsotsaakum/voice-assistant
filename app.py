@@ -11,6 +11,13 @@ load_dotenv(ROOT / ".env", override=True)
 
 from src.brain import think
 from src.chat import chat_model, openai_enabled
+from src.conversations import (
+    append_message,
+    end_conversation,
+    get_or_create,
+    public_payload,
+    snapshot,
+)
 from src.geo import geocode_place
 from src.languages import public_language_list
 from src.stt import transcribe_wav
@@ -47,6 +54,7 @@ def reminders_due():
     from src.store import due_reminders
 
     return jsonify({"reminders": due_reminders()})
+
 
 @app.get("/api/geocode")
 def geocode():
@@ -96,8 +104,10 @@ def talk():
     except json.JSONDecodeError:
         history = []
 
-    answer = think(text, lang, history)
-    return jsonify({"transcript": text, "language": lang, "reply": answer})
+    conversation_id = (request.form.get("conversation_id") or "").strip() or None
+    payload = _chat_payload(text, lang, history, conversation_id)
+    payload["transcript"] = text
+    return jsonify(payload)
 
 
 @app.post("/api/chat")
@@ -106,10 +116,43 @@ def chat():
     text = (body.get("text") or "").strip()
     language = body.get("language") or "english"
     history = body.get("history") or []
+    conversation_id = (body.get("conversation_id") or "").strip() or None
     if not text:
         return jsonify({"detail": "Type a message first"}), 400
-    answer = think(text, language, history)
-    return jsonify({"reply": answer, "language": language})
+    return jsonify(_chat_payload(text, language, history, conversation_id))
+
+
+@app.post("/api/conversations")
+def create_conversation():
+    conv = get_or_create(None)
+    return jsonify(public_payload(conv)), 201
+
+
+@app.get("/api/conversations/<conversation_id>")
+def get_conversation(conversation_id: str):
+    data = snapshot(conversation_id)
+    if not data:
+        return jsonify({"detail": "No chat with that id."}), 404
+    return jsonify(data)
+
+
+@app.post("/api/conversations/<conversation_id>/end")
+def finish_conversation(conversation_id: str):
+    conv = end_conversation(conversation_id)
+    if not conv:
+        return jsonify({"detail": "No chat with that id."}), 404
+    return jsonify(public_payload(conv))
+
+
+@app.post("/api/conversations/<conversation_id>/turns")
+def add_conversation_turn(conversation_id: str):
+    body = request.get_json(silent=True) or {}
+    role = (body.get("role") or "").strip()
+    content = (body.get("content") or "").strip()
+    conv = append_message(conversation_id, role, content)
+    if not conv:
+        return jsonify({"detail": "No active chat with that id."}), 404
+    return jsonify(public_payload(conv))
 
 
 @app.post("/api/speak")
@@ -124,6 +167,19 @@ def speak_route():
         return jsonify({"skipped": True, "reason": "No spoken voice for this language yet; showing text only."})
     mime = "audio/wav" if audio[:4] == b"RIFF" else "audio/mpeg"
     return Response(audio, mimetype=mime)
+
+
+def _chat_payload(text: str, language: str, history: list, conversation_id: str | None) -> dict:
+    conv = get_or_create(conversation_id)
+    answer = think(text, language, history, conversation_id=conv.conversation_id)
+    live = snapshot(conv.conversation_id) or public_payload(conv)
+    return {
+        "reply": answer,
+        "language": language,
+        "conversation_id": live["conversation_id"],
+        "active": live["active"],
+        "turn_count": live["turn_count"],
+    }
 
 
 if __name__ == "__main__":

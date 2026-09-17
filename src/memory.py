@@ -1,4 +1,10 @@
-"""Session chat plus lasting notes from the JSON store."""
+"""Session chat buffer plus lasting notes from the JSON store.
+
+Per-conversation server memory (conversation_id, active flag, restore on
+refresh) lives in ``src.conversations``. This module still builds a short
+turn list for callers that do not pass a conversation id, and injects
+tasks/goals/health into Groq as lasting notes.
+"""
 
 from __future__ import annotations
 
