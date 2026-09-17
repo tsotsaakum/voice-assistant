@@ -11,7 +11,7 @@ def test_fastapi_health_and_deploy_status():
     deploy = client.get("/api/deploy")
     assert deploy.status_code == 200
     body = deploy.json()
-    assert [p["id"] for p in body["teach"]] == ["streamlit", "vercel", "docker"]
+    assert [p["id"] for p in body["teach"]] == ["streamlit", "docker", "vercel"]
     assert [p["id"] for p in body["wired"]] == ["fastapi", "aws"]
 
 

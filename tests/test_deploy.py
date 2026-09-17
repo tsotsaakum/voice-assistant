@@ -15,13 +15,13 @@ from src.deploy import (
 def test_catalog_wires_all_five_platforms():
     ids = [item["id"] for item in catalog()]
     assert ids == ["streamlit", "fastapi", "vercel", "docker", "aws"]
-    assert TEACH_IDS == ("streamlit", "vercel", "docker")
+    assert TEACH_IDS == ("streamlit", "docker", "vercel")
     assert WIRED_IDS == ("fastapi", "aws")
 
 
 def test_public_status_teaches_only_streamlit_docker_vercel():
     data = public_status()
-    assert [item["id"] for item in data["teach"]] == ["streamlit", "vercel", "docker"]
+    assert [item["id"] for item in data["teach"]] == ["streamlit", "docker", "vercel"]
     assert [item["id"] for item in data["wired"]] == ["fastapi", "aws"]
     for item in data["teach"]:
         assert item["how"]

@@ -14,7 +14,7 @@ from pathlib import Path
 from src import cloud_storage
 
 ROOT = Path(__file__).resolve().parents[1]
-TEACH_IDS = ("streamlit", "vercel", "docker")
+TEACH_IDS = ("streamlit", "docker", "vercel")
 WIRED_IDS = ("fastapi", "aws")
 
 
@@ -97,7 +97,7 @@ def vercel_platform() -> dict:
         "command": "npx vercel --prod",
         "files": ["vercel.json", "api/index.py", "api/requirements.txt"],
         "how": (
-            "Vercel hosts the FastAPI entry in api/index.py. Config is already packed. "
+            "Vercel hosts the packed Lentswe app from vercel.json. "
             "A live push needs VERCEL_TOKEN in the environment; without it the files "
             "are still ready to deploy from your own machine."
         ),
@@ -165,6 +165,7 @@ def catalog() -> list[dict]:
 def public_status() -> dict:
     platforms = catalog()
     teach = [p for p in platforms if p["id"] in TEACH_IDS]
+    teach.sort(key=lambda item: TEACH_IDS.index(item["id"]))
     wired = [p for p in platforms if p["id"] in WIRED_IDS]
     blocked = []
     for item in platforms:
@@ -187,7 +188,16 @@ def pack(platform_id: str) -> dict:
     pid = (platform_id or "").strip().lower()
     if pid == "streamlit":
         item = streamlit_platform()
-        return {"ok": item["ready"], "platform": item, "action": "checked"}
+        return {
+            "ok": item["ready"],
+            "platform": item,
+            "action": "checked",
+            "detail": (
+                "Streamlit easy UI is packed. Run: " + item["command"]
+                if item["ready"]
+                else "streamlit_app.py is missing."
+            ),
+        }
     if pid == "docker":
         item = docker_platform()
         version = None
@@ -243,7 +253,7 @@ def spoken_status() -> str:
     data = public_status()
     teach_bits = []
     for item in data["teach"]:
-        state = "ready" if item["ready"] else "not packed"
+        state = "live" if item["live"] else ("packed" if item["ready"] else "not packed")
         extra = ""
         if item["id"] == "vercel" and not item["live"]:
             extra = ", live push blocked without VERCEL_TOKEN"
@@ -289,7 +299,7 @@ def spoken_help(user_text: str) -> str:
             else "A Vercel token is set, so you can run npx vercel --prod."
         )
         return (
-            "Vercel hosts Lentswe from vercel.json and api/index.py. "
+            "Vercel hosts Lentswe from vercel.json. "
             f"{token_note} Command: {item['command']}."
         )
     if "docker" in text or "pack" in text or "compose" in text:
