@@ -21,6 +21,9 @@ from src.conversations import (
 from src.geo import geocode_place
 from src.languages import public_language_list
 from src.stt import transcribe_wav
+from src.knowledge import entries as knowledge_entries
+from src.knowledge import forget as forget_knowledge
+from src.knowledge import teach as teach_knowledge
 from src.store import load as load_memory
 from src.tts import speak
 
@@ -42,6 +45,29 @@ def languages():
 @app.get("/api/memory")
 def memory():
     return jsonify(load_memory())
+
+
+@app.get("/api/knowledge")
+def knowledge():
+    return jsonify({"questions": knowledge_entries()})
+
+
+@app.post("/api/knowledge")
+def add_knowledge():
+    body = request.get_json(silent=True) or {}
+    question = (body.get("question") or "").strip()
+    answer = (body.get("answer") or "").strip()
+    if not question or not answer:
+        return jsonify({"detail": "Need both a question and an answer."}), 400
+    item = teach_knowledge(question, answer)
+    return jsonify(item), 201
+
+
+@app.delete("/api/knowledge/<entry_id>")
+def remove_knowledge(entry_id: str):
+    if not forget_knowledge(entry_id):
+        return jsonify({"detail": "No taught reply with that id."}), 404
+    return jsonify({"ok": True})
 
 
 @app.get("/api/status")

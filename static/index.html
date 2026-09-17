@@ -56,6 +56,7 @@
       <button type="button" data-skill="tasks">Tasks</button>
       <button type="button" data-skill="goals">Goals</button>
       <button type="button" data-skill="learn">Learning</button>
+      <button type="button" data-skill="teach">Teach</button>
       <button type="button" data-skill="memory">Memory</button>
       <button type="button" data-skill="access">Access</button>
     </nav>
@@ -155,9 +156,33 @@
           <button type="button" class="ask" data-ask="teach me Sepedi">Teach Sepedi</button>
         </div>
       </div>
+      <div class="skill-view" data-view="teach">
+        <h3>Teach Lentswe</h3>
+        <p>
+          Train lasting Q&amp;A that lives in a JSON knowledge base on this computer.
+          Close matches count (about 60%). New chat does <strong>not</strong> wipe these —
+          that is only for this session’s name and chat history.
+        </p>
+        <form id="teach-form" class="teach-form">
+          <div class="teach-row">
+            <input id="teach-question" type="text" placeholder="When they say…" autocomplete="off" />
+            <input id="teach-answer" type="text" placeholder="Reply with…" autocomplete="off" />
+          </div>
+          <button type="submit">Teach Lentswe</button>
+        </form>
+        <p id="teach-saved" class="hint">No taught replies yet. Ask something she does not know, or use the form.</p>
+        <ul id="teach-list" class="check-list"></ul>
+        <div class="chips">
+          <button type="button" class="ask" data-ask="what's the canteen special?">What's the canteen special?</button>
+          <button type="button" class="ask" data-ask="canteen special">Canteen special</button>
+          <button type="button" class="ask" data-ask="when I say hello, reply hey there">Teach hello → hey there</button>
+          <button type="button" class="ask" data-ask="hello">Hello</button>
+          <button type="button" class="ask" data-ask="skip">Skip</button>
+        </div>
+      </div>
       <div class="skill-view" data-view="memory">
         <h3>This chat’s memory</h3>
-        <p>Each session has its own conversation id on the server. Typed and spoken turns share it. Refresh keeps this chat; New chat starts a clean one. Tasks and goals still live in lasting JSON memory.</p>
+        <p>Each session has its own conversation id on the server. Typed and spoken turns share it. Refresh keeps this chat; New chat starts a clean one. Tasks, goals, and <strong>taught replies</strong> still live in lasting JSON memory.</p>
         <p id="memory-session" class="hint"></p>
         <div class="chips">
           <button type="button" class="ask" data-ask="my name is Akum">My name is Akum</button>
