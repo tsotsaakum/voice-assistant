@@ -32,13 +32,19 @@ def _vercel_token() -> bool:
 
 def streamlit_platform() -> dict:
     ready = _exists("streamlit_app.py")
+    cli = shutil.which("streamlit") is not None
+    blocked = []
+    if not ready:
+        blocked.append("streamlit_app.py missing")
+    if not cli:
+        blocked.append("streamlit CLI")
     return {
         "id": "streamlit",
         "name": "Streamlit",
         "role": "easy UI",
         "teach": True,
         "ready": ready,
-        "live": ready,
+        "live": ready and cli,
         "command": "streamlit run streamlit_app.py --server.port 8501",
         "url": "http://127.0.0.1:8501",
         "files": ["streamlit_app.py", ".streamlit/config.toml"],
@@ -46,7 +52,7 @@ def streamlit_platform() -> dict:
             "Open Deploy, then run the Streamlit command. You get a simple chat "
             "page that talks to the same Lentswe brain — no extra cloud key."
         ),
-        "blocked": [] if ready else ["streamlit_app.py missing"],
+        "blocked": blocked,
     }
 
 
@@ -243,6 +249,8 @@ def spoken_status() -> str:
             extra = ", live push blocked without VERCEL_TOKEN"
         elif item["id"] == "docker" and not item["live"]:
             extra = ", docker CLI not on this machine"
+        elif item["id"] == "streamlit" and not item["live"]:
+            extra = ", streamlit CLI not on this machine"
         teach_bits.append(f"{item['name']} {state}{extra}")
     wired_bits = [f"{item['name']} wired" for item in data["wired"]]
     return (
