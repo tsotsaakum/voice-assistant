@@ -14,7 +14,7 @@ from pathlib import Path
 from src import cloud_storage
 
 ROOT = Path(__file__).resolve().parents[1]
-TEACH_IDS = ("streamlit", "docker", "vercel")
+TEACH_IDS = ("streamlit", "vercel", "docker")
 WIRED_IDS = ("fastapi", "aws")
 
 

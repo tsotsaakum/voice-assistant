@@ -93,6 +93,8 @@ def _reply(
     trained = trained_reply(user_text)
     if trained:
         return trained
+    if is_deploy_query(user_text):
+        return spoken_help(user_text)
     if any(word in text for word in ("status", "are you running", "are you on")):
         return status_line()
     if any(word in text for word in ("what date", "today's date", "the date")):
@@ -117,8 +119,6 @@ def _reply(
     if mailed:
         return mailed
 
-    if is_deploy_query(user_text):
-        return spoken_help(user_text)
     if is_pack_query(user_text):
         return pack_for_trip(user_text)
     if is_run_query(user_text):
