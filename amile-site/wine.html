@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amile Wines</title>
+  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="/wines.css">
+  <link rel="stylesheet" href="/chat.css">
+</head>
+<body class="page-wine">
+  <header class="am-bar">
+    <a class="am-bar__brand" href="/">Amile</a>
+    <nav class="am-bar__nav" aria-label="Site">
+        <a href="/">Home</a>
+        <a href="/wine.html" aria-current="page">Wine</a>
+        <a href="/jewellery.html">Jewellery</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/instagram.html">Instagram</a>
+        <a href="/delivery.html">Delivery</a>
+    </nav>
+  </header>
+
+  <div class="am-gate" id="am-entry" role="dialog" aria-modal="true" aria-labelledby="am-entry-title">
+    <div class="am-gate__card" data-entry="ask">
+      <p class="am-gate__kicker">Stage 1 · Entry</p>
+      <h2 id="am-entry-title">Are you 18 or older?</h2>
+      <p>Amile wine is 18+ in South Africa. Enter your birth year, or confirm you are an adult, before the catalogue opens.</p>
+      <form id="am-entry-form">
+        <label for="am-entry-year">Birth year</label>
+        <input id="am-entry-year" name="year" inputmode="numeric" maxlength="4" placeholder="e.g. 1990" autocomplete="bday-year">
+        <p class="am-err" id="am-entry-err" hidden></p>
+        <button class="am-btn" type="submit">Enter the wine shop</button>
+        <button class="am-btn am-btn--ghost" id="am-entry-confirm" type="button">I confirm I am 18+</button>
+      </form>
+    </div>
+    <div class="am-gate__card" data-entry="no" hidden>
+      <p class="am-gate__kicker">18+ only</p>
+      <h2>We cannot show the wines</h2>
+      <p>Amile does not sell alcohol to anyone under 18 in South Africa. The catalogue stays closed. Please drink responsibly — alcohol is not for children.</p>
+    </div>
+  </div>
+
+  <div id="am-shop">
+  <header class="top">
+    <p class="top__brand">
+      Amile <span class="diamond" aria-hidden="true"></span>
+    </p>
+    <p class="top__place">Western Cape · South Africa</p>
+  </header>
+
+  <section class="strip" aria-label="Featured bottles">
+    <label class="pane" id="cabernet">
+      <input type="radio" name="amile-bottle" id="bottle-cabernet">
+      <img src="/images/cabernet-sauvignon.jpg" alt="Amile Cabernet Sauvignon 2020">
+      <div class="pane__copy">
+        <p class="pane__kicker">Red</p>
+        <h2>Cabernet Sauvignon</h2>
+        <p class="pane__meta">2020 · Western Cape</p>
+      </div>
+    </label>
+    <label class="pane" id="pinotage">
+      <input type="radio" name="amile-bottle" id="bottle-pinotage" checked>
+      <img src="/images/pinotage.jpg" alt="Amile Pinotage 2015">
+      <div class="pane__copy">
+        <p class="pane__kicker">Red</p>
+        <h2>Pinotage</h2>
+        <p class="pane__meta">2015 · Stellenbosch</p>
+      </div>
+    </label>
+    <label class="pane" id="rose">
+      <input type="radio" name="amile-bottle" id="bottle-rose">
+      <img src="/images/rose.jpg" alt="Amile Sweet Rosé 2018">
+      <div class="pane__copy">
+        <p class="pane__kicker">Rosé</p>
+        <h2>Sweet Rosé</h2>
+        <p class="pane__meta">2018 · Devon Valley</p>
+      </div>
+    </label>
+    <label class="pane" id="chenin">
+      <input type="radio" name="amile-bottle" id="bottle-chenin">
+      <img src="/images/chenin-blanc.jpg" alt="Amile Chenin Blanc 2021">
+      <div class="pane__copy">
+        <p class="pane__kicker">White</p>
+        <h2>Chenin Blanc</h2>
+        <p class="pane__meta">2021 · Western Cape</p>
+      </div>
+    </label>
+  </section>
+
+  <nav class="scrub" aria-label="Bottle chapters">
+    <label class="scrub__ch" for="bottle-cabernet">
+      <span class="scrub__fill"></span>
+      Cabernet
+    </label>
+    <label class="scrub__ch" for="bottle-pinotage">
+      <span class="scrub__fill"></span>
+      Pinotage
+    </label>
+    <label class="scrub__ch" for="bottle-rose">
+      <span class="scrub__fill"></span>
+      Rosé
+    </label>
+    <label class="scrub__ch" for="bottle-chenin">
+      <span class="scrub__fill"></span>
+      Chenin
+    </label>
+  </nav>
+
+  <section class="shop" id="catalogue">
+    <header class="shop__head">
+      <h1>Wines</h1>
+      <p>From the soil to the palm of your hand — cut, set, and poured like a diamond.</p>
+    </header>
+    <p class="shop__actions">
+      <button type="button" class="am-btn am-btn--ghost" data-quote="a mixed case">Get a shipping quote</button>
+    </p>
+
+    <ul class="shop__grid">
+      <li class="card">
+        <a href="#cabernet">
+          <div class="card__frame">
+            <img src="/images/cabernet-sauvignon.jpg" alt="Amile Cabernet Sauvignon 2020">
+          </div>
+          <div class="card__copy">
+            <h2>Cabernet Sauvignon 2020</h2>
+            <p>Black currant, blueberries and mocha; smooth tannins with a long velvety finish.</p>
+          </div>
+        </a>
+        <button type="button" class="card__ask" data-quote="Cabernet Sauvignon 2020">Request this bottle</button>
+      </li>
+      <li class="card">
+        <a href="#pinotage">
+          <div class="card__frame">
+            <img src="/images/pinotage.jpg" alt="Amile Pinotage 2015">
+          </div>
+          <div class="card__copy">
+            <h2>Pinotage 2015</h2>
+            <p>Full bodied red of dark fruits, smoky vanilla, cigars and cedar; elegant tannins.</p>
+          </div>
+        </a>
+        <button type="button" class="card__ask" data-quote="Pinotage 2015">Request this bottle</button>
+      </li>
+      <li class="card">
+        <a href="#rose">
+          <div class="card__frame">
+            <img src="/images/rose.jpg" alt="Amile Sweet Rosé 2018">
+          </div>
+          <div class="card__copy">
+            <h2>Sweet Rosé 2018</h2>
+            <p>Refreshing, easy drinking wine. A wine for everyday enjoyment.</p>
+          </div>
+        </a>
+        <button type="button" class="card__ask" data-quote="Sweet Rosé 2018">Request this bottle</button>
+      </li>
+      <li class="card">
+        <a href="#chenin">
+          <div class="card__frame">
+            <img src="/images/chenin-blanc.jpg" alt="Amile Chenin Blanc 2021">
+          </div>
+          <div class="card__copy">
+            <h2>Chenin Blanc 2021</h2>
+            <p>Ripe tropical fruit of white pear, peach and guava. Fresh yet smooth.</p>
+          </div>
+        </a>
+        <button type="button" class="card__ask" data-quote="Chenin Blanc 2021">Request this bottle</button>
+      </li>
+    </ul>
+  </section>
+  </div>
+
+  <div class="am-gate" id="am-checkout" hidden role="dialog" aria-modal="true" aria-labelledby="am-checkout-title" aria-hidden="true">
+    <div class="am-gate__card" data-checkout="ask">
+      <p class="am-gate__kicker">Stage 2 · Checkout re-check</p>
+      <h2 id="am-checkout-title">Confirm you are 18+</h2>
+      <p>Requesting <strong id="am-checkout-wine">this bottle</strong>. There is no cart yet — this is a shipping-quote demo. We ask your age again before it continues. No prices are listed.</p>
+      <form id="am-check-form">
+        <label for="am-check-year">Birth year</label>
+        <input id="am-check-year" name="year" inputmode="numeric" maxlength="4" placeholder="e.g. 1990" autocomplete="bday-year">
+        <label for="am-check-place">Suburb or town</label>
+        <input id="am-check-place" name="place" placeholder="Where should the courier quote to?">
+        <p class="am-err" id="am-check-err" hidden></p>
+        <button class="am-btn" type="submit">Continue quote</button>
+        <button class="am-btn am-btn--ghost" id="am-check-cancel" type="button">Cancel</button>
+      </form>
+    </div>
+    <div class="am-gate__card" data-checkout="no" hidden>
+      <p class="am-gate__kicker">18+ only</p>
+      <h2>Quote stopped</h2>
+      <p>We cannot quote or send wine to anyone under 18. Drink responsibly.</p>
+      <button class="am-btn" id="am-check-cancel-no" type="button">Close</button>
+    </div>
+  </div>
+
+  <div class="am-gate" id="am-ping" hidden role="dialog" aria-modal="true" aria-labelledby="am-ping-title" aria-hidden="true">
+    <div class="am-gate__card">
+      <div class="am-ping">
+        <p class="am-ping__mark" aria-hidden="true"><span>ID</span></p>
+        <div>
+          <p class="am-gate__kicker">Stage 3 · Courier ping</p>
+          <h2 id="am-ping-title">Bring your ID</h2>
+        </div>
+      </div>
+      <p>Like Uber Eats, the courier will ping you on delivery and ask to see your ID. No ID, no handover — we do not want kids ordering wine online.</p>
+      <p id="am-ping-place"></p>
+      <button class="am-btn" id="am-ping-ok" type="button">Got it</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var radios = document.querySelectorAll("input[name='amile-bottle']");
+      var panes = document.querySelectorAll(".pane");
+      var strip = document.querySelector(".strip");
+      var scrub = document.querySelector(".scrub");
+      var chapters = document.querySelectorAll(".scrub__ch");
+      if (!radios.length || !strip || !scrub) return;
+
+      var motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      var i = 1;
+      var timer;
+      var hovering = false;
+
+      function reduce() {
+        return motion.matches;
+      }
+
+      function paint(restartFill) {
+        panes.forEach(function (pane, n) {
+          pane.classList.toggle("is-open", n === i);
+        });
+        chapters.forEach(function (ch, n) {
+          ch.classList.toggle("is-on", n === i);
+          ch.setAttribute("aria-current", n === i ? "true" : "false");
+          var fill = ch.querySelector(".scrub__fill");
+          if (!fill) return;
+          if (reduce()) {
+            fill.style.animation = "none";
+            fill.style.transform = n === i ? "scaleX(1)" : "scaleX(0)";
+            return;
+          }
+          if (restartFill !== false) {
+            fill.style.animation = "none";
+            fill.style.transform = "";
+            void fill.offsetWidth;
+            fill.style.animation = "";
+          }
+        });
+      }
+
+      function go(index, fromUser) {
+        i = (index + radios.length) % radios.length;
+        radios[i].checked = true;
+        paint(true);
+        if (fromUser && !reduce()) {
+          stop();
+          if (!hovering) start();
+        }
+      }
+
+      function play() {
+        go(i + 1, false);
+      }
+
+      function start() {
+        stopTimer();
+        strip.classList.remove("is-paused");
+        scrub.classList.remove("is-paused");
+        if (!reduce() && !hovering) timer = setInterval(play, 4500);
+      }
+
+      function stopTimer() {
+        clearInterval(timer);
+        timer = null;
+      }
+
+      function stop() {
+        stopTimer();
+        strip.classList.add("is-paused");
+        scrub.classList.add("is-paused");
+      }
+
+      function pause() {
+        hovering = true;
+        stop();
+      }
+
+      function resume() {
+        hovering = false;
+        if (reduce()) {
+          stop();
+          return;
+        }
+        start();
+      }
+
+      radios.forEach(function (radio, index) {
+        radio.addEventListener("change", function () {
+          i = index;
+          paint(true);
+        });
+      });
+
+      chapters.forEach(function (ch, index) {
+        ch.setAttribute("tabindex", "0");
+        ch.addEventListener("keydown", function (e) {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          go(index, true);
+        });
+      });
+
+      document.querySelectorAll('.card a[href^="#"]').forEach(function (link) {
+        link.addEventListener("click", function () {
+          var id = (link.getAttribute("href") || "").slice(1);
+          var pane = id && document.getElementById(id);
+          if (!pane) return;
+          var radio = pane.querySelector("input[name='amile-bottle']");
+          var idx = Array.prototype.indexOf.call(radios, radio);
+          if (idx >= 0) go(idx, true);
+        });
+      });
+
+      strip.addEventListener("mouseenter", pause);
+      strip.addEventListener("mouseleave", resume);
+      strip.addEventListener("focusin", pause);
+      strip.addEventListener("focusout", function (e) {
+        if (!strip.contains(e.relatedTarget)) resume();
+      });
+      scrub.addEventListener("mouseenter", pause);
+      scrub.addEventListener("mouseleave", resume);
+      scrub.addEventListener("focusin", pause);
+      scrub.addEventListener("focusout", function (e) {
+        if (!scrub.contains(e.relatedTarget)) resume();
+      });
+
+      if (motion.addEventListener) {
+        motion.addEventListener("change", function () {
+          paint(true);
+          if (reduce()) stop();
+          else if (!hovering) start();
+        });
+      }
+
+      var startIndex = 1;
+      radios.forEach(function (radio, index) {
+        if (radio.checked) startIndex = index;
+      });
+      go(startIndex, false);
+      if (reduce()) stop();
+      else start();
+    })();
+  </script>
+
+  <button class="amc-launcher" id="amc-launcher" type="button" aria-expanded="false" aria-controls="amc-panel" aria-label="Open Ask Amile FAQ">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M5 6.5h14v9.5H9l-4 3v-3H5z"/>
+    </svg>
+  </button>
+
+  <aside class="amc-panel" id="amc-panel" hidden role="dialog" aria-labelledby="amc-title">
+    <div class="amc-head">
+      <div>
+        <h2 id="amc-title">Ask Amile</h2>
+        <p>FAQ concierge</p>
+      </div>
+      <button class="amc-close" id="amc-close" type="button" aria-label="Close Ask Amile">&times;</button>
+    </div>
+    <div class="amc-log" id="amc-log" aria-live="polite"></div>
+    <div class="amc-chips" aria-label="Suggested questions">
+      <button type="button" class="amc-chip" data-amc="shipping">Shipping</button>
+      <button type="button" class="amc-chip" data-amc="jewellery">Jewellery</button>
+      <button type="button" class="amc-chip" data-amc="age 18+">Age 18+</button>
+      <button type="button" class="amc-chip" data-amc="tasting notes">Tasting notes</button>
+      <button type="button" class="amc-chip" data-amc="four wines">The four wines</button>
+      <button type="button" class="amc-chip" data-amc="contact">Contact</button>
+    </div>
+    <form class="amc-form" id="amc-form">
+      <label class="amc-sr" for="amc-q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Ask a question</label>
+      <input id="amc-q" name="q" type="text" autocomplete="off" placeholder="Ask Amile…">
+      <button type="submit">Send</button>
+    </form>
+  </aside>
+  <script src="/agegate.js"></script>
+  <script src="/chat.js"></script>
+
+  <footer class="am-foot">
+    <p class="am-foot__brand">Amile</p>
+    <nav aria-label="Footer">
+      <a href="/">Home</a>
+      <a href="/wine.html" aria-current="page">Wine</a>
+      <a href="/jewellery.html">Jewellery</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/instagram.html">Instagram</a>
+      <a href="/delivery.html">Delivery</a>
+    </nav>
+    <p class="am-foot__place">Western Cape · South Africa</p>
+    <p class="am-foot__note"><a href="/contact.html">Contact</a> · 18+ · Please drink responsibly</p>
+  </footer>
+</body>
+</html>

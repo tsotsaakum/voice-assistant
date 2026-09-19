@@ -1,0 +1,225 @@
+/* Amile Wines — FAQ concierge. Black / cream / gold, matches wines.css. */
+
+.amc-launcher {
+  position: fixed;
+  right: 1.15rem;
+  bottom: 1.15rem;
+  z-index: 40;
+  width: 48px;
+  height: 48px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--am-wines-gold, #c9a56a);
+  border-radius: 50%;
+  background: var(--am-wines-ink, #111111);
+  color: var(--am-wines-gold, #c9a56a);
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.amc-launcher:hover,
+.amc-launcher[aria-expanded="true"] {
+  background: var(--am-wines-gold, #c9a56a);
+  color: var(--am-wines-ink, #111111);
+}
+
+.amc-launcher:focus-visible {
+  outline: 2px solid var(--am-wines-gold, #c9a56a);
+  outline-offset: 3px;
+}
+
+.amc-launcher svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: block;
+  margin: 0 auto;
+}
+
+.amc-panel {
+  position: fixed;
+  right: 1.15rem;
+  bottom: 5.1rem;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  width: min(22.5rem, calc(100vw - 1.6rem));
+  height: min(28.5rem, calc(100vh - 8.5rem));
+  background: #161616;
+  color: var(--am-wines-text, #f3eee6);
+  border: 1px solid rgba(201, 165, 106, 0.35);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
+
+.amc-panel[hidden] {
+  display: none;
+}
+
+.amc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem 0.75rem;
+  border-bottom: 1px solid rgba(201, 165, 106, 0.22);
+  background: #111111;
+}
+
+.amc-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--am-wines-text, #f3eee6);
+}
+
+.amc-head p {
+  margin: 0.2rem 0 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--am-wines-gold, #c9a56a);
+}
+
+.amc-close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--am-wines-muted, #9a9388);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.amc-close:hover {
+  color: var(--am-wines-gold, #c9a56a);
+}
+
+.amc-log {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.amc-msg {
+  max-width: 92%;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.amc-msg p {
+  margin: 0;
+}
+
+.amc-msg p + p {
+  margin-top: 0.45rem;
+}
+
+.amc-msg--bot {
+  align-self: flex-start;
+  background: #fffdf8;
+  color: #111111;
+}
+
+.amc-msg--you {
+  align-self: flex-end;
+  background: #111111;
+  color: #f3eee6;
+  border: 1px solid rgba(201, 165, 106, 0.45);
+}
+
+.amc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0 0.9rem 0.55rem;
+}
+
+.amc-chip {
+  padding: 0.28rem 0.55rem;
+  border: 1px solid rgba(201, 165, 106, 0.45);
+  background: transparent;
+  color: var(--am-wines-gold, #c9a56a);
+  font-family: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.amc-chip:hover,
+.amc-chip:focus-visible {
+  background: var(--am-wines-gold, #c9a56a);
+  color: #111111;
+}
+
+.amc-form {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem 0.7rem;
+  border-top: 1px solid rgba(201, 165, 106, 0.22);
+}
+
+.amc-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(201, 165, 106, 0.35);
+  background: #111111;
+  color: #f3eee6;
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+
+.amc-form input:focus {
+  outline: 1px solid var(--am-wines-gold, #c9a56a);
+}
+
+.amc-form button {
+  flex: none;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  background: var(--am-wines-gold, #c9a56a);
+  color: #111111;
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* Keep accordion + chapter bar clear on small screens:
+   launcher sits in the lower corner; panel never taller than
+   the space under the strip. */
+@media (max-width: 720px) {
+  .amc-launcher {
+    right: 0.85rem;
+    bottom: 0.85rem;
+  }
+
+  .amc-panel {
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+    bottom: 4.5rem;
+    height: 15.5rem;
+    max-height: min(15.5rem, 34vh);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amc-launcher,
+  .amc-chip,
+  .amc-form button {
+    transition: none;
+  }
+}
