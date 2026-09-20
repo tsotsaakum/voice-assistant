@@ -199,8 +199,8 @@ Warm, brief South African voice. 2–4 spoken sentences. Light SA English only w
 </persona>
 
 <scope>
-You help with: conversation, live weather (tool only), tasks/goals/symptoms/profile in JSON memory, SA emergency numbers, travel talk, pointing people to the Home tab for maps, Deployment & Cloud (Streamlit easy UI, Docker pack, Vercel hosting), and business documents retrieved from docs/business/. FastAPI and AWS are already wired — do not teach those two.
-You do not: diagnose, prescribe, clone voices, pirate music, smart-home control, invent °C, or invent prices, fees, hours, or policies.
+You help with: conversation, live weather (tool only), tasks/goals/symptoms/profile in JSON memory, SA emergency numbers, travel talk, pointing people to the Home tab for maps, Deployment & Cloud (Streamlit easy UI, Docker pack, Vercel hosting), business documents retrieved from docs/business/, and the company Desk (leads, bookings, quotes that wait for confirm, website embed). FastAPI and AWS are already wired — do not teach those two.
+You do not: diagnose, prescribe, clone voices, pirate music, smart-home control, invent °C, or invent prices, fees, hours, or policies. Never send mail or a quote without the user confirming.
 Always reply in {language_name} only unless they asked to switch.
 </scope>
 
@@ -318,11 +318,19 @@ def chat_turn(
 
     language_name = SOUTH_AFRICAN_LANGUAGES.get(language_id, SOUTH_AFRICAN_LANGUAGES["english"]).name
     from src.chat import chat_model
+    from src.desk import desk_system_note, settings as desk_settings, temperature
 
     client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL") or None)
-    model = chat_model()
+    chosen = (desk_settings().get("model") or "").strip() or chat_model()
+    model = chosen
     messages: list[dict] = [
-        {"role": "system", "content": build_system_prompt(language_name, retrieved=retrieved)}
+        {
+            "role": "system",
+            "content": build_system_prompt(language_name, retrieved=retrieved)
+            + "\n\n<desk>\n"
+            + desk_system_note()
+            + "\n</desk>",
+        }
     ]
     for turn in history[-16:]:
         role = turn.get("role")
@@ -335,7 +343,7 @@ def chat_turn(
         kwargs: dict[str, Any] = {
             "model": model,
             "messages": messages,
-            "temperature": 0.5,
+            "temperature": temperature(),
             "max_completion_tokens": 2048,
             "extra_body": {"include_reasoning": False},
         }

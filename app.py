@@ -15,8 +15,27 @@ from src.conversations import (
     append_message,
     end_conversation,
     get_or_create,
+    list_conversations,
     public_payload,
+    share_text,
     snapshot,
+)
+from src.desk import (
+    book_slot,
+    capture_lead,
+    card_svg,
+    confirm_followup,
+    draft_followup,
+    draft_quote,
+    embed_script,
+    handoff,
+    login as desk_login,
+    make_card,
+    next_slots,
+    public_status as desk_public_status,
+    translate_phrase,
+    update_settings,
+    update_workflows,
 )
 from src.deploy import pack as pack_platform
 from src.deploy import public_status
@@ -41,6 +60,17 @@ app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 @app.get("/")
 def home():
     return send_from_directory(STATIC, "index.html")
+
+
+@app.get("/widget")
+def widget():
+    return send_from_directory(STATIC, "widget.html")
+
+
+@app.get("/embed.js")
+def embed_js():
+    origin = request.host_url.rstrip("/")
+    return Response(embed_script(origin), mimetype="application/javascript")
 
 
 @app.get("/api/languages")
@@ -96,10 +126,10 @@ def docs_reindex():
 def docs_upload():
     uploaded = request.files.get("file")
     if not uploaded:
-        return jsonify({"detail": "Need a .md, .txt, or .pdf file with content."}), 400
+        return jsonify({"detail": "Need a .md, .txt, .pdf, or .docx file with content."}), 400
     saved = save_doc_upload(uploaded.filename or "", uploaded.read())
     if not saved:
-        return jsonify({"detail": "Need a .md, .txt, or .pdf file with content."}), 400
+        return jsonify({"detail": "Need a .md, .txt, .pdf, or .docx file with content."}), 400
     return jsonify(saved)
 
 
@@ -189,10 +219,143 @@ def chat():
     return jsonify(_chat_payload(text, language, history, conversation_id))
 
 
+@app.get("/api/desk")
+def desk_status():
+    return jsonify(desk_public_status())
+
+
+@app.patch("/api/desk/settings")
+def desk_settings():
+    body = request.get_json(silent=True) or {}
+    return jsonify(update_settings(body))
+
+
+@app.patch("/api/desk/workflows")
+def desk_workflows():
+    body = request.get_json(silent=True) or {}
+    return jsonify(update_workflows(body))
+
+
+@app.post("/api/auth/login")
+def auth_login():
+    body = request.get_json(silent=True) or {}
+    result = desk_login(body.get("username") or "", body.get("pin") or "")
+    if not result.get("ok"):
+        return jsonify({"detail": result.get("detail") or "Login failed."}), 401
+    return jsonify(result)
+
+
+@app.get("/api/leads")
+def leads_list():
+    from src.desk import list_leads
+
+    return jsonify({"leads": list_leads()})
+
+
+@app.post("/api/leads")
+def leads_add():
+    body = request.get_json(silent=True) or {}
+    try:
+        item = capture_lead(
+            body.get("name") or "",
+            phone=body.get("phone") or "",
+            email=body.get("email") or "",
+            note=body.get("note") or "",
+            conversation_id=body.get("conversation_id") or "",
+        )
+    except ValueError as exc:
+        return jsonify({"detail": str(exc)}), 400
+    return jsonify(item), 201
+
+
+@app.get("/api/bookings")
+def bookings_list():
+    from src.desk import list_bookings
+
+    return jsonify({"bookings": list_bookings(), "slots": next_slots()})
+
+
+@app.post("/api/bookings")
+def bookings_add():
+    body = request.get_json(silent=True) or {}
+    try:
+        item = book_slot(body.get("name") or "", slot=body.get("slot") or "", day=body.get("day") or "")
+    except ValueError as exc:
+        return jsonify({"detail": str(exc)}), 400
+    return jsonify(item), 201
+
+
+@app.post("/api/handoff")
+def handoff_add():
+    body = request.get_json(silent=True) or {}
+    return jsonify(handoff(body.get("reason") or "", conversation_id=body.get("conversation_id") or "")), 201
+
+
+@app.post("/api/quotes")
+def quotes_add():
+    body = request.get_json(silent=True) or {}
+    try:
+        item = draft_quote(body.get("query") or body.get("text") or "")
+    except ValueError as exc:
+        return jsonify({"detail": str(exc)}), 400
+    return jsonify(item), 201
+
+
+@app.post("/api/followups")
+def followups_add():
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm") or body.get("send"):
+        try:
+            return jsonify(confirm_followup(body.get("id") or ""))
+        except ValueError as exc:
+            return jsonify({"detail": str(exc)}), 400
+    try:
+        item = draft_followup(body.get("to") or "", body.get("body") or "", body.get("subject") or "Follow-up from Lentswe")
+    except ValueError as exc:
+        return jsonify({"detail": str(exc)}), 400
+    return jsonify(item), 201
+
+
+@app.post("/api/translate")
+def translate_route():
+    body = request.get_json(silent=True) or {}
+    try:
+        return jsonify(translate_phrase(body.get("text") or "", body.get("language") or "zulu"))
+    except ValueError as exc:
+        return jsonify({"detail": str(exc)}), 400
+
+
+@app.post("/api/cards")
+def cards_add():
+    body = request.get_json(silent=True) or {}
+    return jsonify(make_card(body.get("title") or "", body=body.get("body") or "", ratio=body.get("ratio") or "1:1")), 201
+
+
+@app.get("/api/cards/<card_id>.svg")
+def cards_svg(card_id: str):
+    svg = card_svg(card_id)
+    if not svg:
+        return jsonify({"detail": "No card with that id."}), 404
+    return Response(svg, mimetype="image/svg+xml")
+
+
 @app.post("/api/conversations")
 def create_conversation():
     conv = get_or_create(None)
     return jsonify(public_payload(conv)), 201
+
+
+@app.get("/api/conversations")
+def conversations_index():
+    return jsonify({"conversations": list_conversations(request.args.get("q") or "")})
+
+
+@app.get("/api/conversations/<conversation_id>/share")
+def conversation_share(conversation_id: str):
+    text = share_text(conversation_id)
+    if text is None:
+        return jsonify({"detail": "No chat with that id."}), 404
+    return jsonify({"text": text, "conversation_id": conversation_id})
 
 
 @app.get("/api/conversations/<conversation_id>")
