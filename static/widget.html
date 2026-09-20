@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lentswe widget</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body { background: #faf8f4; min-height: 100vh; }
+    .page { max-width: 100%; padding: 0.85rem; min-height: 100vh; }
+    .thread { max-height: none; flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <p class="kicker">Product support</p>
+    <h1 style="font-size:1.3rem">Lentswe</h1>
+    <p class="hint">Guest chat. Same company brain. No staff Desk here.</p>
+    <section id="log" class="thread" aria-live="polite">
+      <div id="empty-state" class="empty">
+        <p class="empty-title">How can I help?</p>
+        <p>Ask a price, hours, or wifi. I cite the file.</p>
+      </div>
+    </section>
+    <form id="type-form" class="dock">
+      <input id="text-input" type="text" placeholder="Ask anything…" autocomplete="off" />
+      <button type="submit" class="send">Send</button>
+    </form>
+    <p id="status" class="status">Ready.</p>
+  </div>
+  <script src="/static/widget.js"></script>
+</body>
+</html>

@@ -213,12 +213,58 @@ def snapshot(conversation_id: str) -> dict | None:
         return public_payload(conv)
 
 
+def _preview(conv: Conversation) -> str:
+    for turn in conv.chat_history():
+        if turn.get("role") == "user" and turn.get("content"):
+            return str(turn["content"])[:80]
+    return "New chat"
+
+
+def list_conversations(query: str = "") -> list[dict]:
+    needle = (query or "").strip().lower()
+    with _LOCK:
+        _load()
+        rows = []
+        for conv in _STORE.values():
+            preview = _preview(conv)
+            if needle and needle not in preview.lower() and needle not in conv.conversation_id.lower():
+                continue
+            rows.append(
+                {
+                    "conversation_id": conv.conversation_id,
+                    "active": conv.active,
+                    "turn_count": conv.turn_count(),
+                    "updated_at": conv.updated_at,
+                    "created_at": conv.created_at,
+                    "preview": preview,
+                }
+            )
+        rows.sort(key=lambda row: row.get("updated_at") or "", reverse=True)
+        return rows
+
+
+def share_text(conversation_id: str) -> str | None:
+    with _LOCK:
+        _load()
+        conv = _STORE.get(conversation_id)
+        if not conv:
+            return None
+        lines = [f"Lentswe chat {conv.conversation_id}"]
+        for turn in conv.chat_history():
+            who = "You" if turn.get("role") == "user" else "Lentswe"
+            lines.append(f"{who}: {turn.get('content')}")
+        return "\n".join(lines)
+
+
 def public_payload(conv: Conversation) -> dict:
     return {
         "conversation_id": conv.conversation_id,
         "active": conv.active,
         "turn_count": conv.turn_count(),
         "messages": conv.chat_history(),
+        "updated_at": conv.updated_at,
+        "created_at": conv.created_at,
+        "preview": _preview(conv),
     }
 
 

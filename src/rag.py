@@ -24,7 +24,7 @@ _DEFAULT_INDEX = ROOT / "data" / "rag_index.json"
 DOCS = _DEFAULT_DOCS
 INDEX = _DEFAULT_INDEX
 
-SUPPORTED = {".md", ".markdown", ".txt", ".pdf"}
+SUPPORTED = {".md", ".markdown", ".txt", ".pdf", ".docx"}
 CHUNK_SIZE = 520
 CHUNK_OVERLAP = 80
 TOP_K = 3
@@ -168,10 +168,28 @@ def _extract_pdf(path: Path) -> str:
     return "\n".join(pages)
 
 
+def _extract_docx(path: Path) -> str:
+    """Read Word text from the zip XML. No extra package."""
+    import zipfile
+    from xml.etree import ElementTree
+
+    try:
+        with zipfile.ZipFile(path) as archive:
+            xml = archive.read("word/document.xml")
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return ""
+    root = ElementTree.fromstring(xml)
+    ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    parts = [node.text or "" for node in root.findall(".//w:t", ns)]
+    return " ".join(part for part in parts if part)
+
+
 def extract_text(path: Path) -> str:
     suffix = path.suffix.lower()
     if suffix == ".pdf":
         return _extract_pdf(path)
+    if suffix == ".docx":
+        return _extract_docx(path)
     try:
         return path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -387,7 +405,7 @@ def public_status() -> dict:
         "chunk_count": len(data.get("chunks") or []),
         "cloud_key": False,
         "hint": (
-            "Drop .md, .txt, or .pdf files into docs/business/ then tap Rebuild index. "
+            "Drop .md, .txt, .pdf, or .docx files into docs/business/ then tap Rebuild index. "
             "No embedding API key."
         ),
     }

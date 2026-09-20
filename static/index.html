@@ -22,21 +22,35 @@
           <p class="kicker">South African voice</p>
           <h1>Lentswe</h1>
           <p id="groq-line" class="hint">Groq chat: checking…</p>
+          <p class="presence"><span id="online-dot" class="online-dot" aria-hidden="true"></span><span id="online-line">Online · guest</span></p>
         </div>
       </div>
-      <label class="lang-wrap">
-        <span>Language</span>
-        <select id="language">
-          <option value="auto">Auto-detect</option>
-        </select>
-      </label>
+      <div class="top-tools">
+        <label class="lang-wrap">
+          <span>Assistant</span>
+          <select id="assistant-mode">
+            <option value="product_support">Product support</option>
+            <option value="sales">Sales</option>
+            <option value="general">General</option>
+          </select>
+        </label>
+        <label class="lang-wrap">
+          <span>Language</span>
+          <select id="language">
+            <option value="auto">Auto-detect</option>
+          </select>
+        </label>
+      </div>
     </header>
 
     <p id="spoken-hint" class="hint">Choose a language, then speak or type. Greetings are public words; Lentswe speaks them in her own synthetic voice.</p>
 
     <div class="memory-bar" aria-label="This chat session">
       <p id="memory-line" class="meta">This chat has its own memory. Say your name, then ask “What is my name?”</p>
-      <button id="new-chat" type="button">New chat</button>
+      <div class="memory-actions">
+        <button id="share-chat" type="button">Share</button>
+        <button id="new-chat" type="button">New chat</button>
+      </div>
     </div>
 
     <section class="greet-band" aria-label="Native greetings">
@@ -59,6 +73,7 @@
       <button type="button" data-skill="teach">Teach</button>
       <button type="button" data-skill="memory">Memory</button>
       <button type="button" data-skill="docs">Docs</button>
+      <button type="button" data-skill="desk">Desk</button>
       <button type="button" data-skill="deploy">Deploy</button>
       <button type="button" data-skill="access">Access</button>
     </nav>
@@ -203,7 +218,7 @@
         <p id="docs-summary" class="hint">Checking the document folder…</p>
         <ul id="docs-list" class="check-list"></ul>
         <form id="docs-upload-form" class="mini-form">
-          <input id="docs-file" type="file" accept=".md,.markdown,.txt,.pdf,text/plain,text/markdown,application/pdf" />
+          <input id="docs-file" type="file" accept=".md,.markdown,.txt,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
           <button type="submit">Add file</button>
         </form>
         <div class="chips">
@@ -212,6 +227,152 @@
           <button type="button" class="ask" data-ask="what's the refund policy for catering?">Refund policy</button>
           <button type="button" class="ask" data-ask="what is the guest wifi password?">Guest wifi</button>
           <button type="button" class="ask" data-ask="how much is a Tesla?">Unknown price (Tesla)</button>
+        </div>
+      </div>
+      <div class="skill-view" data-view="desk">
+        <div class="desk-hero">
+          <p class="kicker">Intelligent conversation. Smarter business.</p>
+          <h3>Company desk</h3>
+          <p>
+            ChatNova-style console on the same FastAPI brain. Voice, Teach, Memory, Docs, and Deploy stay put.
+            Staff pin is <code>lentswe</code>. Guest can still chat.
+          </p>
+          <div class="pill-row" id="desk-pills">
+            <span>Smart responses</span>
+            <span>Context aware</span>
+            <span>Secure on this computer</span>
+          </div>
+        </div>
+        <nav class="desk-nav" aria-label="Desk sections">
+          <button type="button" data-desk="dashboard" aria-pressed="true">Dashboard</button>
+          <button type="button" data-desk="inbox">Inbox</button>
+          <button type="button" data-desk="flows">Flows</button>
+          <button type="button" data-desk="connect">Connect</button>
+          <button type="button" data-desk="settings">Settings</button>
+          <button type="button" data-desk="studio">Studio</button>
+        </nav>
+        <div class="desk-pane" data-desk-pane="dashboard">
+          <div class="desk-grid">
+            <article class="desk-card">
+              <p class="role">AI performance</p>
+              <p id="desk-accuracy" class="stat">—%</p>
+              <p id="desk-delta" class="hint">vs last week</p>
+              <svg id="desk-spark" class="spark" viewBox="0 0 140 36" aria-hidden="true"></svg>
+            </article>
+            <article class="desk-card drop-zone" id="desk-drop">
+              <p class="role">Upload knowledge</p>
+              <p>Drag &amp; drop .md, .txt, .pdf, or .docx. Same Docs index. No embedding cloud.</p>
+              <form id="desk-upload-form" class="mini-form">
+                <input id="desk-file" type="file" accept=".md,.markdown,.txt,.pdf,.docx" />
+                <button type="submit">Browse files</button>
+              </form>
+              <ul id="desk-sources" class="check-list"></ul>
+            </article>
+            <article class="desk-card">
+              <p class="role">Staff</p>
+              <form id="staff-form" class="mini-form">
+                <input id="staff-user" type="text" placeholder="staff" autocomplete="username" />
+                <input id="staff-pin" type="password" placeholder="pin" autocomplete="current-password" />
+                <button type="submit">Sign in</button>
+              </form>
+              <p id="staff-line" class="hint">Guest can chat. Staff unlocks the console copy.</p>
+            </article>
+          </div>
+          <div class="chips">
+            <button type="button" class="ask" data-ask="how to upload files?">How to upload files?</button>
+            <button type="button" class="ask" data-ask="what file types are supported?">What file types?</button>
+            <button type="button" class="ask" data-ask="set up integrations">Set up integrations</button>
+            <button type="button" class="ask" data-ask="desk status">Desk status</button>
+            <button type="button" id="desk-docs">View Docs</button>
+            <button type="button" id="desk-example">See example</button>
+            <button type="button" id="desk-tutorial">Watch tutorial</button>
+          </div>
+        </div>
+        <div class="desk-pane" data-desk-pane="inbox" hidden>
+          <form id="inbox-search" class="mini-form">
+            <input id="inbox-query" type="search" placeholder="Search chats…" />
+            <button type="submit">Search</button>
+          </form>
+          <ul id="inbox-list" class="check-list"></ul>
+        </div>
+        <div class="desk-pane" data-desk-pane="flows" hidden>
+          <div id="flow-toggles" class="flow-grid"></div>
+          <form id="lead-form" class="mini-form">
+            <input id="lead-name" type="text" placeholder="Lead name" />
+            <input id="lead-phone" type="tel" placeholder="Phone" />
+            <input id="lead-email" type="email" placeholder="Email" />
+            <button type="submit">Capture lead</button>
+          </form>
+          <form id="book-form" class="mini-form">
+            <input id="book-name" type="text" placeholder="Booking name" />
+            <select id="book-slot"></select>
+            <button type="submit">Hold slot</button>
+          </form>
+          <form id="follow-form" class="mini-form">
+            <input id="follow-to" type="email" placeholder="Follow-up email" />
+            <input id="follow-body" type="text" placeholder="Draft saying…" />
+            <button type="submit">Draft follow-up</button>
+            <button type="button" id="follow-send">Send (confirm)</button>
+          </form>
+          <form id="quote-form" class="mini-form">
+            <input id="quote-query" type="text" placeholder="Quote a catering platter…" />
+            <button type="submit">Draft quote</button>
+          </form>
+          <button type="button" class="ask" data-ask="hand this to a human">Hand to a human</button>
+          <ul id="flow-list" class="check-list"></ul>
+        </div>
+        <div class="desk-pane" data-desk-pane="connect" hidden>
+          <p id="desk-embed-hint" class="hint">Website snippet uses this origin. Slack and WhatsApp stay honest about missing keys.</p>
+          <pre id="desk-snippet" class="snippet"></pre>
+          <button type="button" id="copy-snippet">Copy snippet</button>
+          <div id="desk-integrations" class="deploy-grid"></div>
+          <div id="desk-trust" class="pill-row"></div>
+        </div>
+        <div class="desk-pane" data-desk-pane="settings" hidden>
+          <form id="ai-settings" class="settings-grid">
+            <label>Tone
+              <select id="set-tone">
+                <option value="professional">Professional</option>
+                <option value="warm">Warm</option>
+                <option value="brief">Brief</option>
+              </select>
+            </label>
+            <label>Safety
+              <select id="set-safety">
+                <option value="strict">Strict</option>
+                <option value="standard">Standard</option>
+              </select>
+            </label>
+            <label>Creativity
+              <input id="set-creativity" type="range" min="0" max="100" value="35" />
+              <span id="set-creativity-label">35%</span>
+            </label>
+            <button type="submit">Save settings</button>
+          </form>
+          <p id="settings-saved" class="hint"></p>
+        </div>
+        <div class="desk-pane" data-desk-pane="studio" hidden>
+          <form id="card-form" class="mini-form">
+            <input id="card-title" type="text" placeholder="Card headline" />
+            <select id="card-ratio">
+              <option value="1:1">1:1</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+            </select>
+            <button type="submit">Make card</button>
+          </form>
+          <form id="translate-form" class="mini-form">
+            <input id="translate-text" type="text" placeholder="hello" value="hello" />
+            <select id="translate-lang">
+              <option value="zulu">isiZulu</option>
+              <option value="xhosa">isiXhosa</option>
+              <option value="afrikaans">Afrikaans</option>
+              <option value="sepedi">Sepedi</option>
+            </select>
+            <button type="submit">Translate</button>
+          </form>
+          <p id="studio-line" class="hint">Local cards and the phrase book. No image cloud.</p>
+          <div id="card-preview"></div>
         </div>
       </div>
       <div class="skill-view" data-view="deploy">
@@ -251,6 +412,7 @@
         </svg>
         <span class="sr-only">Click to talk</span>
       </button>
+      <span id="rec-timer" class="rec-timer" hidden>00:00</span>
       <input id="text-input" type="text" placeholder="Type to Lentswe…" autocomplete="off" />
       <button type="submit" class="send">Send</button>
       <button id="stop-speech" type="button" class="quiet" hidden>Hush</button>

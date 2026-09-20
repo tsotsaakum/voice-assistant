@@ -144,13 +144,18 @@ async function startNewChat() {
   setStatus("New chat. This session starts with a clean conversational memory.");
 }
 
+function clockLabel() {
+  const now = new Date();
+  return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 function addBubble(role, text, caption, sources) {
   hideEmpty();
   const div = document.createElement("div");
   div.className = "bubble " + role;
   if (caption) {
     const small = document.createElement("small");
-    small.textContent = caption;
+    small.textContent = caption + " · " + clockLabel();
     div.appendChild(small);
   }
   div.appendChild(document.createTextNode(text));
@@ -336,6 +341,7 @@ async function sendText(text) {
   await maybeSpeak(speakable(data.reply), data.language || language);
   setStatus("Ready.");
   refreshMemoryLists();
+  refreshDesk();
 }
 
 async function sendAudio(blob) {
@@ -372,6 +378,7 @@ async function sendAudio(blob) {
   await maybeSpeak(speakable(data.reply), data.language);
   setStatus("Ready.");
   refreshMemoryLists();
+  refreshDesk();
 }
 
 async function startRecording() {
@@ -396,6 +403,7 @@ async function startRecording() {
   recording = true;
   micButton.classList.add("hot");
   micButton.setAttribute("aria-pressed", "true");
+  startRecTimer();
   setStatus("1 · Capture — listening. Click the mic again when you finish.");
 }
 
@@ -404,7 +412,34 @@ function stopRecording() {
   recording = false;
   micButton.classList.remove("hot");
   micButton.setAttribute("aria-pressed", "false");
+  stopRecTimer();
   recorder.stop();
+}
+
+let recStarted = 0;
+let recTick = 0;
+
+function startRecTimer() {
+  const el = document.getElementById("rec-timer");
+  recStarted = Date.now();
+  if (el) el.hidden = false;
+  stopRecTimer();
+  recTick = setInterval(function () {
+    const sec = Math.floor((Date.now() - recStarted) / 1000);
+    const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+    const ss = String(sec % 60).padStart(2, "0");
+    if (el) el.textContent = mm + ":" + ss;
+  }, 250);
+}
+
+function stopRecTimer() {
+  if (recTick) clearInterval(recTick);
+  recTick = 0;
+  const el = document.getElementById("rec-timer");
+  if (el) {
+    el.hidden = true;
+    el.textContent = "00:00";
+  }
 }
 
 async function hearLentswe(text, language) {
@@ -711,7 +746,8 @@ document.getElementById("docs-upload-form")?.addEventListener("submit", async fu
   }
   if (input) input.value = "";
   await refreshDocs();
-  setStatus("Added " + (data.name || file.name) + " and rebuilt the index.");
+    setStatus("Added " + (data.name || file.name) + " and rebuilt the index.");
+    refreshDesk();
 });
 
 async function refreshDeploy() {
@@ -783,6 +819,7 @@ function openSkill(name) {
   });
   if (name === "teach") refreshKnowledgeList();
   if (name === "docs") refreshDocs();
+  if (name === "desk") refreshDesk();
   if (name === "deploy") refreshDeploy();
   if (name === "tasks" || name === "goals") refreshMemoryLists();
 }
@@ -1033,4 +1070,452 @@ async function checkReminders() {
 }
 
 setInterval(checkReminders, 5000);
+
+const ROLE_KEY = "lentswe-role";
+
+function currentRole() {
+  return localStorage.getItem(ROLE_KEY) || "guest";
+}
+
+function setRole(role) {
+  localStorage.setItem(ROLE_KEY, role);
+  const line = document.getElementById("online-line");
+  if (line) line.textContent = "Online · " + role;
+}
+
+setRole(currentRole());
+
+document.getElementById("share-chat")?.addEventListener("click", async function () {
+  const cid = conversationId || (await ensureConversation());
+  const res = await fetch("/api/conversations/" + encodeURIComponent(cid) + "/share");
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Could not share this chat.");
+    return;
+  }
+  const text = data.text || "";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(text);
+    setStatus("Copied this chat. Paste it where you want.");
+    return;
+  }
+  setStatus(text.slice(0, 120));
+});
+
+document.getElementById("assistant-mode")?.addEventListener("change", async function (event) {
+  await fetch("/api/desk/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assistant_mode: event.target.value }),
+  });
+  setStatus("Assistant mode saved.");
+});
+
+function openDeskPane(name) {
+  document.querySelectorAll(".desk-nav [data-desk]").forEach(function (btn) {
+    btn.setAttribute("aria-pressed", btn.getAttribute("data-desk") === name ? "true" : "false");
+  });
+  document.querySelectorAll(".desk-pane").forEach(function (pane) {
+    pane.hidden = pane.getAttribute("data-desk-pane") !== name;
+  });
+}
+
+document.querySelectorAll(".desk-nav [data-desk]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    openDeskPane(btn.getAttribute("data-desk"));
+  });
+});
+
+function drawSpark(values) {
+  const svg = document.getElementById("desk-spark");
+  if (!svg) return;
+  const nums = values && values.length ? values : [0, 0, 0, 0, 0, 0, 0];
+  const max = Math.max.apply(null, nums.concat([1]));
+  const points = nums.map(function (n, i) {
+    const x = (i / Math.max(nums.length - 1, 1)) * 140;
+    const y = 34 - (n / max) * 30;
+    return x + "," + y;
+  }).join(" ");
+  svg.innerHTML = '<polyline fill="none" stroke="#4a6b5c" stroke-width="2" points="' + points + '"/>';
+}
+
+async function uploadKnowledge(file) {
+  if (!file) {
+    setStatus("Choose a .md, .txt, .pdf, or .docx file first.");
+    return;
+  }
+  const body = new FormData();
+  body.append("file", file, file.name);
+  const res = await fetch("/api/docs/upload", { method: "POST", body: body });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Could not add that file.");
+    return;
+  }
+  await refreshDocs();
+  await refreshDesk();
+  setStatus("Added " + (data.name || file.name) + " and rebuilt the index.");
+}
+
+document.getElementById("desk-upload-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const input = document.getElementById("desk-file");
+  await uploadKnowledge(input && input.files && input.files[0]);
+  if (input) input.value = "";
+});
+
+const drop = document.getElementById("desk-drop");
+if (drop) {
+  ["dragenter", "dragover"].forEach(function (name) {
+    drop.addEventListener(name, function (event) {
+      event.preventDefault();
+      drop.classList.add("hot");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (name) {
+    drop.addEventListener(name, function (event) {
+      event.preventDefault();
+      drop.classList.remove("hot");
+    });
+  });
+  drop.addEventListener("drop", function (event) {
+    const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+    uploadKnowledge(file);
+  });
+}
+
+document.getElementById("staff-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: document.getElementById("staff-user")?.value || "staff",
+      pin: document.getElementById("staff-pin")?.value || "",
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Staff pin did not match.");
+    return;
+  }
+  setRole(data.role || "staff");
+  const line = document.getElementById("staff-line");
+  if (line) line.textContent = "Signed in as " + (data.username || "staff") + ".";
+  setStatus("Staff desk unlocked.");
+});
+
+document.getElementById("desk-docs")?.addEventListener("click", function () {
+  openSkill("docs");
+});
+document.getElementById("desk-example")?.addEventListener("click", function () {
+  sendText("how much is the mutton bunny chow?");
+});
+document.getElementById("desk-tutorial")?.addEventListener("click", function () {
+  sendText("watch tutorial");
+});
+
+document.getElementById("inbox-search")?.addEventListener("submit", function (event) {
+  event.preventDefault();
+  refreshInbox(document.getElementById("inbox-query")?.value || "");
+});
+
+async function refreshInbox(query) {
+  const ul = document.getElementById("inbox-list");
+  if (!ul) return;
+  const res = await fetch("/api/conversations?q=" + encodeURIComponent(query || ""));
+  const data = await res.json().catch(function () { return {}; });
+  ul.innerHTML = "";
+  (data.conversations || []).forEach(function (row) {
+    const li = document.createElement("li");
+    const pair = document.createElement("div");
+    pair.className = "teach-pair";
+    const title = document.createElement("strong");
+    title.textContent = row.preview || row.conversation_id;
+    const meta = document.createElement("span");
+    meta.textContent = (row.active ? "active" : "ended") + " · " + (row.turn_count || 0) + " turns";
+    pair.appendChild(title);
+    pair.appendChild(meta);
+    li.appendChild(pair);
+    const open = document.createElement("button");
+    open.type = "button";
+    open.textContent = "Open";
+    open.addEventListener("click", function () {
+      sessionStorage.setItem(CONVO_KEY, row.conversation_id);
+      conversationId = row.conversation_id;
+      history.length = 0;
+      showEmpty();
+      restoreConversation();
+    });
+    li.appendChild(open);
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById("lead-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const name = document.getElementById("lead-name")?.value || "";
+  const res = await fetch("/api/leads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: name,
+      phone: document.getElementById("lead-phone")?.value || "",
+      email: document.getElementById("lead-email")?.value || "",
+      conversation_id: conversationId,
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Need a lead name.");
+    return;
+  }
+  setStatus("Captured lead " + data.name + ".");
+  refreshDesk();
+});
+
+document.getElementById("book-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/bookings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: document.getElementById("book-name")?.value || "",
+      slot: document.getElementById("book-slot")?.value || "",
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Need a booking name.");
+    return;
+  }
+  setStatus("Held " + data.slot + " for " + data.name + ".");
+  refreshDesk();
+});
+
+document.getElementById("follow-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/followups", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: document.getElementById("follow-to")?.value || "",
+      body: document.getElementById("follow-body")?.value || "",
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "Need an email and a message.");
+    return;
+  }
+  setStatus("Draft follow-up waiting. Confirm before send.");
+  refreshDesk();
+});
+
+document.getElementById("follow-send")?.addEventListener("click", async function () {
+  const res = await fetch("/api/followups", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: true }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  setStatus(data.result || data.detail || "Follow-up update.");
+  refreshDesk();
+});
+
+document.getElementById("quote-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/quotes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: document.getElementById("quote-query")?.value || "" }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) {
+    setStatus(data.detail || "No matching price.");
+    return;
+  }
+  const first = (data.lines || [])[0] || {};
+  setStatus("Draft quote " + (first.item || "") + " " + (first.price || "") + ".");
+  refreshDesk();
+});
+
+document.getElementById("ai-settings")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/desk/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tone: document.getElementById("set-tone")?.value,
+      safety: document.getElementById("set-safety")?.value,
+      creativity: document.getElementById("set-creativity")?.value,
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  const hint = document.getElementById("settings-saved");
+  if (hint) hint.textContent = "Saved tone " + (data.tone || "") + ", safety " + (data.safety || "") + ".";
+  setStatus("AI settings saved on this computer.");
+});
+
+document.getElementById("set-creativity")?.addEventListener("input", function (event) {
+  const label = document.getElementById("set-creativity-label");
+  if (label) label.textContent = event.target.value + "%";
+});
+
+document.getElementById("card-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/cards", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: document.getElementById("card-title")?.value || "Lentswe",
+      ratio: document.getElementById("card-ratio")?.value || "1:1",
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  const box = document.getElementById("card-preview");
+  if (box && data.id) box.innerHTML = '<img alt="Lentswe card" src="/api/cards/' + data.id + '.svg" />';
+  setStatus("Made a local card. No image cloud.");
+});
+
+document.getElementById("translate-form")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const res = await fetch("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text: document.getElementById("translate-text")?.value || "hello",
+      language: document.getElementById("translate-lang")?.value || "zulu",
+    }),
+  });
+  const data = await res.json().catch(function () { return {}; });
+  const line = document.getElementById("studio-line");
+  if (line) line.textContent = data.translation || data.detail || "Could not translate.";
+});
+
+document.getElementById("copy-snippet")?.addEventListener("click", async function () {
+  const text = document.getElementById("desk-snippet")?.textContent || "";
+  if (navigator.clipboard && text) {
+    await navigator.clipboard.writeText(text);
+    setStatus("Embed snippet copied.");
+  }
+});
+
+async function refreshDesk() {
+  const res = await fetch("/api/desk");
+  if (!res.ok) return;
+  const data = await res.json();
+  const stats = data.analytics || {};
+  const acc = document.getElementById("desk-accuracy");
+  const delta = document.getElementById("desk-delta");
+  if (acc) acc.textContent = (stats.accuracy != null ? stats.accuracy : "—") + "%";
+  if (delta) {
+    const sign = stats.delta > 0 ? "+" : "";
+    delta.textContent = sign + (stats.delta || 0) + "% vs last week · " + (stats.turns_this_week || 0) + " turns";
+  }
+  drawSpark(stats.spark || []);
+  const sources = document.getElementById("desk-sources");
+  if (sources) {
+    const docs = await fetch("/api/docs").then(function (r) { return r.json(); }).catch(function () { return {}; });
+    sources.innerHTML = "";
+    (docs.files || []).forEach(function (row) {
+      const li = document.createElement("li");
+      li.textContent = (row.name || "") + " · " + (row.chunks || 0) + " chunks";
+      sources.appendChild(li);
+    });
+  }
+  const settings = data.settings || {};
+  const tone = document.getElementById("set-tone");
+  const safety = document.getElementById("set-safety");
+  const creat = document.getElementById("set-creativity");
+  const creatLabel = document.getElementById("set-creativity-label");
+  const mode = document.getElementById("assistant-mode");
+  if (tone && settings.tone) tone.value = settings.tone;
+  if (safety && settings.safety) safety.value = settings.safety;
+  if (creat && settings.creativity != null) creat.value = settings.creativity;
+  if (creatLabel && settings.creativity != null) creatLabel.textContent = settings.creativity + "%";
+  if (mode && settings.assistant_mode) mode.value = settings.assistant_mode;
+  const flows = document.getElementById("flow-toggles");
+  if (flows) {
+    flows.innerHTML = "";
+    const names = {
+      auto_responses: "Auto-responses (Teach)",
+      smart_routing: "Smart routing (handoff)",
+      lead_capture: "Lead capture",
+      follow_up: "Follow-up email (confirm)",
+    };
+    Object.keys(names).forEach(function (key) {
+      const label = document.createElement("label");
+      label.className = "toggle";
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = !!(data.workflows && data.workflows[key]);
+      box.addEventListener("change", function () {
+        const body = {};
+        body[key] = box.checked;
+        fetch("/api/desk/workflows", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      });
+      label.appendChild(box);
+      label.appendChild(document.createTextNode(names[key]));
+      flows.appendChild(label);
+    });
+  }
+  const slot = document.getElementById("book-slot");
+  if (slot) {
+    slot.innerHTML = "";
+    (data.slots || []).forEach(function (row) {
+      const opt = document.createElement("option");
+      opt.value = row.label;
+      opt.textContent = row.label;
+      slot.appendChild(opt);
+    });
+  }
+  const flowList = document.getElementById("flow-list");
+  if (flowList) {
+    flowList.innerHTML = "";
+    (data.leads || []).forEach(function (row) {
+      const li = document.createElement("li");
+      li.textContent = "Lead · " + row.name + (row.email ? " · " + row.email : "");
+      flowList.appendChild(li);
+    });
+    (data.bookings || []).forEach(function (row) {
+      const li = document.createElement("li");
+      li.textContent = "Hold · " + row.name + " · " + row.slot;
+      flowList.appendChild(li);
+    });
+    (data.handoffs || []).forEach(function (row) {
+      const li = document.createElement("li");
+      li.textContent = "Handoff · " + row.id + " · " + (row.reason || "");
+      flowList.appendChild(li);
+    });
+  }
+  const grid = document.getElementById("desk-integrations");
+  if (grid) {
+    grid.innerHTML = "";
+    (data.integrations || []).forEach(function (item) {
+      const card = document.createElement("article");
+      card.className = "deploy-card";
+      card.innerHTML = "<p class=\"role\">" + (item.ready ? "ready" : "blocked") + "</p><h4>" + item.name + "</h4><p>" + (item.how || "") + "</p>";
+      grid.appendChild(card);
+    });
+  }
+  const snippet = document.getElementById("desk-snippet");
+  const site = (data.integrations || []).find(function (row) { return row.id === "website"; });
+  if (snippet && site) snippet.textContent = site.snippet || "";
+  const trust = document.getElementById("desk-trust");
+  if (trust) {
+    trust.innerHTML = "";
+    (data.trust || []).forEach(function (row) {
+      const span = document.createElement("span");
+      span.textContent = row.label;
+      span.title = row.detail || "";
+      trust.appendChild(span);
+    });
+  }
+  refreshInbox("");
+}
 

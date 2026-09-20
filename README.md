@@ -72,7 +72,8 @@ FastAPI (`uvicorn fastapi_app:app --port 8000`) and AWS (`infra/aws-cloudformati
 - Tasks, goals, timed reminders, symptom diary, and profile facts in `data/lentswe.json` (survives restart)
 - **Custom chat memory** keyed by `conversation_id` (typed and spoken). Refresh restores this session; **New chat** starts a clean one. Other tabs do not share the transcript.
 - **Teachable knowledge base** in `data/knowledge_base.json`. If Lentswe does not know a reply (and Groq is off), she asks you to teach her. Close matches count (~60%, same idea as the JSON chatbot tutorial). Taught Q&A survives restart and **New chat**.
-- **Business documents (RAG)** in `docs/business/`. She retrieves a chunk, cites the filename, and says she does not know when nothing matches. The index is `data/rag_index.json` on disk — no embedding cloud key. Groq is not allowed to invent a price or policy.
+- **Business documents (RAG)** in `docs/business/`. She retrieves a chunk, cites the filename, and says she does not know when nothing matches. The index is `data/rag_index.json` on disk — no embedding cloud key. Groq is not allowed to invent a price or policy. `.docx` uploads work too.
+- **Company Desk** (ChatNova-style console): performance, inbox, staff pin `lentswe`, tone/safety/creativity, lead capture, booking holds, human handoff, quotes from Docs, follow-up mail that waits for confirm, website/WordPress/Shopify embed (`/widget`, `/embed.js`), local branded cards, and a phrase-book translator. Slack and WhatsApp stay blocked until you set keys.
 - **Deployment & Cloud** tab: guided **Streamlit** easy UI, **Docker** pack, and **Vercel** hosting. **FastAPI** backend APIs and **AWS** storage + compute are wired (packaging files + `/api/deploy`) but not taught in the app.
 - Custom phrases in `config/commands.json` (open a URL or speak a fixed line)
 - Browser search via Python `webbrowser` (“search Google for …”)

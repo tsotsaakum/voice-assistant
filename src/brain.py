@@ -2,6 +2,7 @@
 
 from src.browse import open_web_search
 from src.chat import openai_enabled, reply
+from src.desk import try_desk_action
 from src.conversations import (
     SESSION_ENDED,
     get_or_create,
@@ -101,6 +102,9 @@ def _reply(
     trained = trained_reply(user_text)
     if trained:
         return trained
+    desk = try_desk_action(user_text, conversation_id or "")
+    if desk:
+        return desk
     if is_deploy_query(user_text):
         return spoken_help(user_text)
     hits = retrieve(user_text)
