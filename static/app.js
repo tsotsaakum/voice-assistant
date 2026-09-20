@@ -341,6 +341,7 @@ async function sendText(text) {
   await maybeSpeak(speakable(data.reply), data.language || language);
   setStatus("Ready.");
   refreshMemoryLists();
+  refreshDesk();
 }
 
 async function sendAudio(blob) {
@@ -377,6 +378,7 @@ async function sendAudio(blob) {
   await maybeSpeak(speakable(data.reply), data.language);
   setStatus("Ready.");
   refreshMemoryLists();
+  refreshDesk();
 }
 
 async function startRecording() {

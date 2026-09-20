@@ -353,10 +353,14 @@ def analytics() -> dict:
             spark[6 - idx] += 1
         elif at >= prev:
             last_week.append(row)
-    honest = sum(1 for row in this_week if row.get("kind") in {"grounded", "unknown", "taught"})
+    answered = sum(
+        1
+        for row in this_week
+        if row.get("kind") in {"grounded", "unknown", "taught", "handoff", "chat"}
+    )
     turns = len(this_week)
     last_turns = len(last_week) or 1
-    accuracy = round((honest / turns) * 100, 1) if turns else 100.0
+    accuracy = round((answered / turns) * 100, 1) if turns else 100.0
     delta = round(((turns - len(last_week)) / last_turns) * 100, 1)
     return {
         "turns_this_week": turns,
