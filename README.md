@@ -60,6 +60,7 @@ python -m src.assistant
 - Greetings in 11 languages (click-to-talk mic, not always-on listening)
 - Live weather from **Open-Meteo** (“weather in Cape Town”) — numbers are never invented (no OpenWeatherMap key)
 - Tasks, goals, timed reminders, symptom diary, and profile facts in `data/lentswe.json` (survives restart)
+- **Custom chat memory** keyed by `conversation_id` (typed and spoken). Refresh restores this session; **New chat** starts a clean one. Other tabs do not share the transcript.
 - Custom phrases in `config/commands.json` (open a URL or speak a fixed line)
 - Browser search via Python `webbrowser` (“search Google for …”)
 - Optional SMTP test mail (“send an email to test@example.com saying hello”)
@@ -86,6 +87,7 @@ python -m src.assistant
 | File               | Role                                                                    |
 | ------------------ | ----------------------------------------------------------------------- |
 | `src/store.py`     | Writes `data/lentswe.json` after every task/goal/symptom/profile change |
+| `src/conversations.py` | Per-chat custom memory: `conversation_id`, message list, active flag |
 | `src/memory.py`    | Session chat plus a snapshot injected into every Groq request           |
 | `src/mms_tts.py`   | Local Simba / MMS VITS voices                                           |
 | `src/weather.py`   | Open-Meteo (no API key)                                                 |
@@ -118,7 +120,7 @@ Lentswe is a student voice assistant that runs on your PC.
 
 - **Microphone audio** is sent from the browser to this Flask app, then to Google speech-to-text (`*-ZA` locales) so it can turn speech into text. Audio is not stored as files on purpose.
 
-- **Chat text** (typed or transcribed) is processed on this PC. If a Groq key is set, that text is sent to Groq to generate a reply and choose tools.
+- **Chat text** (typed or transcribed) is processed on this PC. If a Groq key is set, that text is sent to Groq to generate a reply and choose tools. Each browser session keeps its own `conversation_id` so chats stay isolated. Transcripts for those sessions are saved in `data/conversations.json` on this computer (gitignored). **New chat** ends the session.
 
 - **Weather** uses Open-Meteo (live forecast). No OpenWeatherMap key is required.
 

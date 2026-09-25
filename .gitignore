@@ -8,3 +8,4 @@ __pycache__/
 *.wav
 *.mp3
 data/lentswe.json
+data/conversations.json

@@ -6,9 +6,10 @@ const form = document.getElementById("type-form");
 const textInput = document.getElementById("text-input");
 const spokenHint = document.getElementById("spoken-hint");
 const stopSpeechBtn = document.getElementById("stop-speech");
-const emptyState = document.getElementById("empty-state");
 
+const CONVO_KEY = "lentswe-conversation-id";
 const history = [];
+let conversationId = sessionStorage.getItem(CONVO_KEY) || "";
 const languagesById = new Map();
 let recording = false;
 let recorder = null;
@@ -52,7 +53,95 @@ async function showGroqLine() {
 showGroqLine();
 
 function hideEmpty() {
-  emptyState?.remove();
+  document.getElementById("empty-state")?.remove();
+}
+
+function showEmpty() {
+  logEl.innerHTML = "";
+  const div = document.createElement("div");
+  div.id = "empty-state";
+  div.className = "empty";
+  div.innerHTML =
+    "<p class=\"empty-title\">She is listening in eleven languages.</p>" +
+    "<p>Tap a greeting, ask for weather, or type in the box below.</p>";
+  logEl.appendChild(div);
+}
+
+function updateMemoryBar(data) {
+  const line = document.getElementById("memory-line");
+  const session = document.getElementById("memory-session");
+  const cid = (data && data.conversation_id) || conversationId || "…";
+  const turns = data && typeof data.turn_count === "number" ? data.turn_count : history.length;
+  const active = !data || data.active !== false;
+  if (line) {
+    line.innerHTML = active
+      ? "This chat remembers <strong>" + turns + "</strong> turns · session <code>" + cid + "</code>"
+      : "Session <code>" + cid + "</code> has ended. Start a new chat.";
+  }
+  if (session) {
+    session.textContent = active
+      ? "Active session " + cid + " · " + turns + " turns on the server."
+      : "This session ended. New chat gives you a fresh conversation id.";
+  }
+}
+
+async function ensureConversation() {
+  if (conversationId) return conversationId;
+  const res = await fetch("/api/conversations", { method: "POST" });
+  const data = await res.json();
+  conversationId = data.conversation_id || "";
+  if (conversationId) sessionStorage.setItem(CONVO_KEY, conversationId);
+  updateMemoryBar(data);
+  return conversationId;
+}
+
+function rememberConversation(data) {
+  if (data && data.conversation_id) {
+    conversationId = data.conversation_id;
+    sessionStorage.setItem(CONVO_KEY, conversationId);
+  }
+  updateMemoryBar(data || {});
+}
+
+async function restoreConversation() {
+  const saved = sessionStorage.getItem(CONVO_KEY) || "";
+  if (!saved) {
+    await ensureConversation();
+    return;
+  }
+  const res = await fetch("/api/conversations/" + encodeURIComponent(saved));
+  if (!res.ok) {
+    conversationId = "";
+    sessionStorage.removeItem(CONVO_KEY);
+    await ensureConversation();
+    return;
+  }
+  const data = await res.json();
+  rememberConversation(data);
+  if (data.active === false) {
+    await startNewChat();
+    return;
+  }
+  const messages = data.messages || [];
+  if (!messages.length) return;
+  messages.forEach(function (turn) {
+    history.push({ role: turn.role, content: turn.content });
+    addBubble(turn.role === "user" ? "user" : "bot", turn.content, turn.role === "user" ? "You" : "Lentswe");
+  });
+}
+
+async function startNewChat() {
+  if (conversationId) {
+    await fetch("/api/conversations/" + encodeURIComponent(conversationId) + "/end", { method: "POST" }).catch(function () {
+      return null;
+    });
+  }
+  conversationId = "";
+  sessionStorage.removeItem(CONVO_KEY);
+  history.length = 0;
+  showEmpty();
+  await ensureConversation();
+  setStatus("New chat. This session starts with a clean conversational memory.");
 }
 
 function addBubble(role, text, caption) {
@@ -205,20 +294,26 @@ async function maybeSpeak(text, language) {
 async function sendText(text) {
   if (handleLocalLists(text)) return;
   const language = languageSelect.value;
+  const cid = await ensureConversation();
   addBubble("user", text, "You");
   history.push({ role: "user", content: text });
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: text, language: language, history: history }),
+    body: JSON.stringify({ text: text, language: language, conversation_id: cid }),
   });
   const data = await res.json();
   if (!res.ok) {
     setStatus(data.detail || "Chat failed.");
     return;
   }
+  rememberConversation(data);
   history.push({ role: "assistant", content: data.reply });
   addBubble("bot", data.reply, "Lentswe");
+  if (data.active === false) {
+    setStatus("This chat session has ended. Start a new chat.");
+    return;
+  }
   if (isQuiet(text)) {
     stopSpeech();
     if (recording) stopRecording();
@@ -233,10 +328,11 @@ async function sendText(text) {
 async function sendAudio(blob) {
   setStatus("2 · Speech-to-text — turning your voice into words…");
   const wav = await blobToWav(blob);
+  const cid = await ensureConversation();
   const formData = new FormData();
   formData.append("audio", wav, "speech.wav");
   formData.append("language", languageSelect.value);
-  formData.append("history_json", JSON.stringify(history));
+  formData.append("conversation_id", cid);
   const res = await fetch("/api/talk", { method: "POST", body: formData });
   const data = await res.json().catch(function () {
     return {};
@@ -245,10 +341,15 @@ async function sendAudio(blob) {
     setStatus(data.detail || "Could not understand that. Try again.");
     return;
   }
+  rememberConversation(data);
   history.push({ role: "user", content: data.transcript });
   history.push({ role: "assistant", content: data.reply });
   addBubble("user", data.transcript, "You · " + data.language);
   addBubble("bot", data.reply, "Lentswe");
+  if (data.active === false) {
+    setStatus("This chat session has ended. Start a new chat.");
+    return;
+  }
   if (isQuiet(data.transcript)) {
     stopSpeech();
     setStatus("Ready.");
@@ -319,6 +420,7 @@ function renderGreetingChips() {
 loadLanguages()
   .then(function () {
     renderGreetingChips();
+    return restoreConversation();
   })
   .catch(function () {
     setStatus("Could not load languages.");
@@ -345,6 +447,11 @@ micButton.addEventListener("click", function (event) {
 
 languageSelect.addEventListener("change", updateSpokenHint);
 stopSpeechBtn?.addEventListener("click", stopSpeech);
+document.getElementById("new-chat")?.addEventListener("click", function () {
+  startNewChat().catch(function (err) {
+    setStatus(err.message || "Could not start a new chat.");
+  });
+});
 
 document.getElementById("play-all")?.addEventListener("click", async function () {
   setStatus("Lentswe is speaking the 11 greetings…");
@@ -635,6 +742,15 @@ async function checkReminders() {
       const line = "Reminder: " + (rows[i].text || "time is up");
       addBubble("bot", line, "Lentswe");
       history.push({ role: "assistant", content: line });
+      if (conversationId) {
+        await fetch("/api/conversations/" + encodeURIComponent(conversationId) + "/turns", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "assistant", content: line }),
+        }).catch(function () {
+          return null;
+        });
+      }
       setStatus("Reminder.");
       await maybeSpeak(line, language);
     }
