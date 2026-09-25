@@ -71,13 +71,24 @@ def learning_reply(user_text: str) -> str:
         "zulu": "isiZulu: Sawubona is hello to one person. Sanibonani is hello to a group. Ngiyabonga is thank you.",
         "xhosa": "isiXhosa: Molo is hello to one person. Molweni is hello to a group. Enkosi is thank you.",
         "sepedi": "Sepedi: Dumela is hello to one person. Dumelang is hello to a group. Ke a leboga is thank you.",
+        "sesotho": (
+            "Sesotho: Dumela is hello to one person, and Dumelang is hello to a group. "
+            "O kae? means how are you, and Ke phela hantle means I am fine. "
+            "Ke a leboha is thank you, and Ka kopo is please. "
+            "Ee is yes and Tjhe is no. Ntshwarele means excuse me or sorry. "
+            "Robala hantle means sleep well. "
+            "Tsamaya hantle means go well (goodbye), and Sala hantle means stay well. "
+            "Lebitso la hao ke mang? asks what is your name, and Ke bitswa … means my name is … . "
+            "Ke a o rata means I love you."
+        ),
         "afrikaans": "Afrikaans: Hallo is hello. Dankie is thank you. Totsiens is goodbye.",
     }
     for key, line in lessons.items():
         if key in text:
             return line + " Tap a greeting chip and listen to Lentswe’s synthetic voice — we do not copy YouTube audio."
     return (
-        "Learning: I can drill SA greetings. Say “teach me isiZulu”, “teach me isiXhosa”, or “teach me Sepedi”. "
+        "Learning: I can drill SA greetings. Say “teach me isiZulu”, “teach me isiXhosa”, "
+        "“teach me Sepedi”, or “teach me Sesotho”. "
         "Or use Lentswe says all 11. This is practice, not a university course."
     )
 
