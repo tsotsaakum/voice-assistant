@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amile Jewellery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="/chat.css">
+  <link rel="stylesheet" href="/jewellery.css">
+</head>
+<body class="page-jewel">
+  <header class="am-bar ab-top">
+    <div class="ab-brand">
+      <a class="am-bar__brand" href="/">Amile</a>
+      <p>British jewellery</p>
+    </div>
+    <nav class="am-bar__nav" aria-label="Site">
+        <a href="/">Home</a>
+        <a href="/wine.html">Wine</a>
+        <a href="/jewellery.html" aria-current="page">Jewellery</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/instagram.html">Instagram</a>
+        <a href="/delivery.html">Delivery</a>
+    </nav>
+  </header>
+
+  <section class="ab-stage" aria-label="Bespoke handmade jewellery">
+    <p class="ab-discover">Discover more<br>of Amile’s jewellery</p>
+    <p class="ab-bespoke">Bespoke</p>
+    <a class="ab-ring" href="https://www.instagram.com/amilediamonds/" target="_blank" rel="noopener noreferrer">
+      <img src="/images/statement-ring-front.jpg" alt="Floral pear statement ring — Amile diamonds">
+    </a>
+    <p class="ab-handmade">Handmade<br>jewellery</p>
+  </section>
+
+  <section class="ab-board" aria-label="The collection">
+    <div class="ab-board__row">
+      <button class="ab-arrow" type="button" data-ab-dir="-1" aria-label="Previous views">‹</button>
+      <ul class="ab-slides" id="ab-slides">
+        <li data-ab-slot>
+          <a href="https://www.instagram.com/amilediamonds/">
+            <img src="/images/statement-ring-angle.jpg" alt="Statement ring, three-quarter view">
+          </a>
+        </li>
+        <li data-ab-slot>
+          <a href="https://www.instagram.com/amilediamonds/">
+            <img src="/images/statement-ring-side.jpg" alt="Statement ring, side profile">
+          </a>
+        </li>
+        <li data-ab-slot>
+          <a href="https://www.instagram.com/amilediamonds/">
+            <img src="/images/statement-ring-profile.jpg" alt="Statement ring, gallery profile">
+          </a>
+        </li>
+      </ul>
+      <div class="ab-board__head">
+        <h2>Amile<span>The collection</span></h2>
+      </div>
+      <button class="ab-arrow" type="button" data-ab-dir="1" aria-label="Next views">›</button>
+    </div>
+    <nav class="ab-menu" aria-label="View chapters">
+      <button type="button" class="ab-menu__ch is-on" data-ab-piece="0">Front</button>
+      <button type="button" class="ab-menu__ch" data-ab-piece="1">Angle</button>
+      <button type="button" class="ab-menu__ch" data-ab-piece="2">Side</button>
+      <button type="button" class="ab-menu__ch" data-ab-piece="3">Profile</button>
+    </nav>
+  </section>
+
+  <footer class="ab-foot">
+    <div class="ab-foot__cols">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/wine.html">Wine</a></li>
+        <li><a href="/jewellery.html" aria-current="page">Jewellery</a></li>
+      </ul>
+      <ul>
+        <li><a href="/instagram.html">Instagram</a></li>
+        <li><a href="https://www.instagram.com/amilediamonds/">@amilediamonds</a></li>
+        <li><a href="https://www.instagram.com/amilediamonds/">Jewellery feed</a></li>
+      </ul>
+      <ul>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="/delivery.html">Delivery</a></li>
+        <li><a href="/contact.html">Write to the house</a></li>
+      </ul>
+      <ul>
+        <li>Western Cape</li>
+        <li>South Africa</li>
+        <li>18+ · drink responsibly</li>
+      </ul>
+    </div>
+    <p class="ab-foot__mark">Amile</p>
+  </footer>
+
+  <button class="amc-launcher" id="amc-launcher" type="button" aria-expanded="false" aria-controls="amc-panel" aria-label="Open Ask Amile FAQ">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M5 6.5h14v9.5H9l-4 3v-3H5z"/>
+    </svg>
+  </button>
+  <aside class="amc-panel" id="amc-panel" hidden role="dialog" aria-labelledby="amc-title">
+    <div class="amc-head">
+      <div>
+        <h2 id="amc-title">Ask Amile</h2>
+        <p>FAQ concierge</p>
+      </div>
+      <button class="amc-close" id="amc-close" type="button" aria-label="Close Ask Amile">&times;</button>
+    </div>
+    <div class="amc-log" id="amc-log" aria-live="polite"></div>
+    <div class="amc-chips" aria-label="Suggested questions">
+      <button type="button" class="amc-chip" data-amc="shipping">Shipping</button>
+      <button type="button" class="amc-chip" data-amc="jewellery">Jewellery</button>
+      <button type="button" class="amc-chip" data-amc="four wines">Wine</button>
+      <button type="button" class="amc-chip" data-amc="age 18+">Age 18+</button>
+      <button type="button" class="amc-chip" data-amc="contact">Contact</button>
+    </div>
+    <form class="amc-form" id="amc-form">
+      <label class="amc-sr" for="amc-q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Ask a question</label>
+      <input id="amc-q" name="q" type="text" autocomplete="off" placeholder="Ask Amile…">
+      <button type="submit">Send</button>
+    </form>
+  </aside>
+  <script src="/jewellery.js"></script>
+  <script src="/chat.js"></script>
+</body>
+</html>

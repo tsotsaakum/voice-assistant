@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delivery — Amile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="/chat.css">
+</head>
+<body class="page-sheet">
+  <header class="am-bar">
+    <a class="am-bar__brand" href="/">Amile</a>
+    <nav class="am-bar__nav" aria-label="Site">
+        <a href="/">Home</a>
+        <a href="/wine.html">Wine</a>
+        <a href="/jewellery.html">Jewellery</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/instagram.html">Instagram</a>
+        <a href="/delivery.html" aria-current="page">Delivery</a>
+    </nav>
+  </header>
+  <div class="am-tools" aria-label="Language, currency, and wishlist">
+    <div role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="af">AF</button>
+      <button type="button" data-lang="zu">ZU</button>
+    </div>
+    <div role="group" aria-label="Currency">
+      <button type="button" data-fx="zar" aria-pressed="true">ZAR</button>
+      <button type="button" data-fx="usd">USD</button>
+      <button type="button" data-fx="gbp">GBP</button>
+    </div>
+    <p class="am-tools__quote" data-i18n="quote">Quote in rand — no price is listed.</p>
+    <button type="button" class="am-wish" data-wish-count>Wishlist 0</button>
+    <button type="button" data-bag-count>Bag 0</button>
+    <button type="button" id="am-voice">Hear Amile</button>
+  </div>
+
+  <main class="am-sheet">
+    <div class="am-sheet__inner">
+      <h1>Delivery</h1>
+      <p>You enter an address. We send a shipping quotation back. There is no published Rand rate on this site.</p>
+      <p>Wine is 18+ in South Africa. The courier does that Uber Eats ping: bring your ID. No ID, no handover — we do not want children ordering wine online. Jewellery does not need the ID ping.</p>
+      <form id="am-del-form">
+        <label for="am-del-kind">What are we quoting?</label>
+        <select id="am-del-kind" name="kind">
+          <option value="wine">Wine (18+)</option>
+          <option value="jewellery">Jewellery</option>
+        </select>
+        <label for="am-del-place">Suburb or town</label>
+        <input id="am-del-place" name="place" placeholder="Where should the courier quote to?">
+        <label for="am-del-year">Birth year (wine only)</label>
+        <input id="am-del-year" name="year" inputmode="numeric" maxlength="4" placeholder="e.g. 1990">
+        <button type="submit">Get a quotation</button>
+      </form>
+      <p class="am-ok" id="am-del-out"></p>
+      <p class="am-note">The wine shop also has <a href="/wine.html">Get a shipping quote</a> on the catalogue (age asked again at checkout).</p>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var form = document.getElementById("am-del-form");
+      if (!form) return;
+      var YEAR = new Date().getFullYear();
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var kind = (document.getElementById("am-del-kind") || {}).value || "wine";
+        var place = (document.getElementById("am-del-place") || {}).value || "";
+        var year = parseInt((document.getElementById("am-del-year") || {}).value, 10);
+        var out = document.getElementById("am-del-out");
+        if (!place.trim()) {
+          out.textContent = "Add a suburb or town so we can quote. We do not invent a Rand rate.";
+          return;
+        }
+        if (kind === "wine") {
+          if (!year || year < 1900 || year > YEAR || YEAR - year < 18) {
+            out.textContent = "Wine is 18+ in South Africa. We cannot quote a wine delivery if you are under 18.";
+            return;
+          }
+          out.innerHTML = "Quote noted for <strong>" + place.replace(/</g, "") + "</strong> (wine). No Rand figure on this page. On the day, the courier will ping for ID — no ID, no handover.";
+          return;
+        }
+        out.innerHTML = "Jewellery quote noted for <strong>" + place.replace(/</g, "") + "</strong>. We will come back with a courier figure — none is listed here.";
+      });
+    })();
+  </script>
+
+
+  <footer class="am-foot">
+    <p class="am-foot__brand">Amile</p>
+    <nav aria-label="Footer">
+      <a href="/">Home</a>
+      <a href="/wine.html">Wine</a>
+      <a href="/jewellery.html">Jewellery</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/instagram.html">Instagram</a>
+      <a href="/delivery.html" aria-current="page">Delivery</a>
+    </nav>
+    <p class="am-foot__extra"><a href="/about.html">About</a><a href="/gifts.html">Gift guides</a><a href="/tastings.html">Tastings</a><a href="/saved.html">Saved</a></p>
+    <p class="am-foot__place">Western Cape · South Africa</p>
+    <p class="am-foot__note"><a href="/contact.html">Contact</a> · Instagram · TikTok (handle to follow) · 18+ · Please drink responsibly</p>
+  </footer>
+
+  <script src="/minutes.js"></script>
+
+  <button class="amc-launcher" id="amc-launcher" type="button" aria-expanded="false" aria-controls="amc-panel" aria-label="Open Ask Amile FAQ">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M5 6.5h14v9.5H9l-4 3v-3H5z"/>
+    </svg>
+  </button>
+  <aside class="amc-panel" id="amc-panel" hidden role="dialog" aria-labelledby="amc-title">
+    <div class="amc-head">
+      <div>
+        <h2 id="amc-title">Ask Amile</h2>
+        <p>FAQ concierge</p>
+      </div>
+      <button class="amc-close" id="amc-close" type="button" aria-label="Close Ask Amile">&times;</button>
+    </div>
+    <div class="amc-log" id="amc-log" aria-live="polite"></div>
+    <div class="amc-chips" aria-label="Suggested questions">
+      <button type="button" class="amc-chip" data-amc="shipping">Shipping</button>
+      <button type="button" class="amc-chip" data-amc="jewellery">Jewellery</button>
+      <button type="button" class="amc-chip" data-amc="four wines">Wine</button>
+      <button type="button" class="amc-chip" data-amc="age 18+">Age 18+</button>
+      <button type="button" class="amc-chip" data-amc="contact">Contact</button>
+    </div>
+    <form class="amc-form" id="amc-form">
+      <label class="amc-sr" for="amc-q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Ask a question</label>
+      <input id="amc-q" name="q" type="text" autocomplete="off" placeholder="Ask Amile…">
+      <button type="submit">Send</button>
+    </form>
+  </aside>
+  <script src="/chat.js"></script>
+</body>
+</html>
