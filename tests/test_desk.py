@@ -10,9 +10,12 @@ from src.desk import (
     confirm_followup,
     draft_followup,
     draft_quote,
+    embed_script,
     handoff,
+    integrations,
     login,
     make_card,
+    public_origin,
     public_status,
     temperature,
     translate_phrase,
@@ -142,3 +145,22 @@ def test_desk_status_payload():
     assert "Smart responses" in payload["pills"]
     assert payload["settings"]["safety"] in {"strict", "standard"}
     assert payload["widget_path"] == "/widget"
+
+
+def test_public_origin_skips_localhost(monkeypatch):
+    monkeypatch.setenv("LENTSWE_PUBLIC_URL", "http://127.0.0.1:7000")
+    assert (
+        public_origin(
+            "http://127.0.0.1:7000",
+            {"X-Forwarded-Host": "lentswe-demo.example", "X-Forwarded-Proto": "https"},
+        )
+        == "https://lentswe-demo.example"
+    )
+    monkeypatch.setenv("LENTSWE_PUBLIC_URL", "https://guest.lentswe.example")
+    assert public_origin("http://127.0.0.1:7000") == "https://guest.lentswe.example"
+    snippet = integrations("https://guest.lentswe.example")[0]["snippet"]
+    assert "127.0.0.1" not in snippet
+    assert "https://guest.lentswe.example/embed.js" in snippet
+    script = embed_script("https://guest.lentswe.example")
+    assert "currentScript" in script
+    assert "127.0.0.1" not in script

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, redirect, request, send_from_directory
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env", override=True)
@@ -32,6 +33,7 @@ from src.desk import (
     login as desk_login,
     make_card,
     next_slots,
+    public_origin,
     public_status as desk_public_status,
     translate_phrase,
     update_settings,
@@ -55,6 +57,7 @@ from src.tts import speak
 STATIC = ROOT / "static"
 
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 
 @app.get("/")
@@ -69,7 +72,7 @@ def widget():
 
 @app.get("/embed.js")
 def embed_js():
-    origin = request.host_url.rstrip("/")
+    origin = public_origin(request.host_url, dict(request.headers))
     return Response(embed_script(origin), mimetype="application/javascript")
 
 
@@ -221,7 +224,7 @@ def chat():
 
 @app.get("/api/desk")
 def desk_status():
-    return jsonify(desk_public_status())
+    return jsonify(desk_public_status(request.host_url, dict(request.headers)))
 
 
 @app.patch("/api/desk/settings")

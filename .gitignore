@@ -12,3 +12,4 @@ data/conversations.json
 data/knowledge_base.json
 data/rag_index.json
 data/cloud-store/
+guest-site/
