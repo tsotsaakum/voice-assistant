@@ -12,3 +12,5 @@ data/conversations.json
 data/knowledge_base.json
 data/rag_index.json
 data/cloud-store/
+data/desk.json
+guest-site/

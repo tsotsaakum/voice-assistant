@@ -648,6 +648,41 @@ def make_card(title: str, body: str = "", ratio: str = "1:1") -> dict:
     return item
 
 
+_LOOPBACK_HOST = re.compile(r"(?i)^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(?::\d+)?$")
+
+
+def _origin_host(url: str) -> str:
+    text = (url or "").strip()
+    if "://" in text:
+        text = text.split("://", 1)[1]
+    return text.split("/")[0].strip()
+
+
+def _is_loopback_origin(url: str) -> bool:
+    host = _origin_host(url)
+    return not host or bool(_LOOPBACK_HOST.match(host))
+
+
+def public_origin(request_url: str | None = None, headers: dict | None = None) -> str:
+    """HTTPS origin for share/embed snippets. Never prefer 127.0.0.1 when a public host is known."""
+    env = (os.getenv("LENTSWE_PUBLIC_URL") or "").strip().rstrip("/")
+    header_map = {str(key).lower(): str(value) for key, value in (headers or {}).items()}
+    forwarded_host = (header_map.get("x-forwarded-host") or "").split(",")[0].strip()
+    forwarded_proto = (header_map.get("x-forwarded-proto") or "").split(",")[0].strip()
+    request = (request_url or "").strip().rstrip("/")
+    forwarded = ""
+    if forwarded_host:
+        proto = forwarded_proto or ("https" if not _is_loopback_origin(f"http://{forwarded_host}") else "http")
+        forwarded = f"{proto}://{forwarded_host}".rstrip("/")
+    candidates = (env, forwarded, request)
+    for candidate in candidates:
+        if candidate and not _is_loopback_origin(candidate):
+            if candidate.startswith("http://") or candidate.startswith("https://"):
+                return candidate
+            return f"https://{candidate}"
+    return env or request or "http://127.0.0.1:7000"
+
+
 def login(username: str, pin: str) -> dict:
     with _LOCK:
         staff = _load().get("staff") or {}
@@ -660,10 +695,10 @@ def login(username: str, pin: str) -> dict:
     return {"ok": False, "detail": "Wrong staff pin. Guest can still chat."}
 
 
-def integrations() -> list[dict]:
+def integrations(origin: str | None = None, headers: dict | None = None) -> list[dict]:
     slack = bool((os.getenv("SLACK_WEBHOOK") or "").strip())
     whatsapp = bool((os.getenv("WHATSAPP_TOKEN") or "").strip())
-    origin = (os.getenv("LENTSWE_PUBLIC_URL") or "http://127.0.0.1:7000").rstrip("/")
+    origin = public_origin(origin, headers)
     snippet = (
         f'<script src="{origin}/embed.js" data-lentswe-embed="1"></script>'
         f'<div id="lentswe-widget"></div>'
@@ -727,15 +762,17 @@ def trust_badges() -> list[dict]:
     ]
 
 
-def public_status() -> dict:
+def public_status(request_url: str | None = None, headers: dict | None = None) -> dict:
     stats = analytics()
+    origin = public_origin(request_url, headers)
     return {
         "headline": "Intelligent conversation. Smarter business.",
         "pills": ["Smart responses", "Context aware", "Secure on this computer"],
         "settings": settings(),
         "workflows": workflows(),
         "analytics": stats,
-        "integrations": integrations(),
+        "origin": origin,
+        "integrations": integrations(origin, headers),
         "trust": trust_badges(),
         "slots": next_slots(),
         "leads": list_leads()[:12],
@@ -772,7 +809,7 @@ def spoken_help(user_text: str) -> str:
             "I cite the filename and will not invent a price."
         )
     if "embed" in text or "wordpress" in text or "shopify" in text:
-        origin = (os.getenv("LENTSWE_PUBLIC_URL") or "http://127.0.0.1:7000").rstrip("/")
+        origin = public_origin()
         return (
             f"Website embed lives at {origin}/embed.js. Paste the snippet from the Desk Connect tab "
             "into WordPress, Shopify, or your footer. Slack and WhatsApp stay blocked until you set keys."
@@ -878,16 +915,20 @@ def card_svg(card_id: str) -> str | None:
 
 
 def embed_script(origin: str) -> str:
-    base = (origin or "http://127.0.0.1:7000").rstrip("/")
+    base = public_origin(origin)
     widget = f"{base}/widget"
     return (
         "(function(){"
+        "var s=document.currentScript;"
+        "var b=(s&&s.src)?s.src.replace(/\\/embed\\.js(?:\\?.*)?$/,''):"
+        f"{json.dumps(base)};"
+        "var widget=b+'/widget';"
         "var d=document.getElementById('lentswe-widget');"
         "if(!d){d=document.createElement('div');d.id='lentswe-widget';document.body.appendChild(d);}"
         "if(d.getAttribute('data-mounted'))return;"
         "d.setAttribute('data-mounted','1');"
         "var f=document.createElement('iframe');"
-        f"f.src={json.dumps(widget)};"
+        "f.src=widget;"
         "f.title='Lentswe';"
         "f.style.cssText='position:fixed;right:16px;bottom:16px;width:360px;height:520px;"
         "border:0;border-radius:18px;box-shadow:0 12px 40px rgba(44,50,46,.25);z-index:9999;';"

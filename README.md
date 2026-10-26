@@ -13,7 +13,7 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-Open [http://127.0.0.1:7000](http://127.0.0.1:7000) — not `/api/chat` (that URL is POST-only).
+Open [http://127.0.0.1:7000](http://127.0.0.1:7000) — not `/api/chat` (that URL is POST-only). The guest widget is `/widget` (no staff pin). Website embed snippets use `LENTSWE_PUBLIC_URL` or the public `Host` / `X-Forwarded-Host` header, not `127.0.0.1`, once the app is on HTTPS.
 
 You need internet for speech-to-text (`*-ZA` locales) and for most TTS. If Edge/Google fail, English/Afrikaans can fall back to **pyttsx3** (Windows SAPI) with no extra API key.
 

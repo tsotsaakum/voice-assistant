@@ -36,6 +36,7 @@ from src.desk import (
     login as desk_login,
     make_card,
     next_slots,
+    public_origin,
     public_status as desk_public_status,
     translate_phrase,
     update_settings,
@@ -84,7 +85,7 @@ def widget():
 
 @app.get("/embed.js")
 def embed_js(request: Request):
-    origin = str(request.base_url).rstrip("/")
+    origin = public_origin(str(request.base_url), dict(request.headers))
     return Response(content=embed_script(origin), media_type="application/javascript")
 
 
@@ -232,8 +233,8 @@ async def chat(request: Request):
 
 
 @app.get("/api/desk")
-def desk_status():
-    return desk_public_status()
+def desk_status(request: Request):
+    return desk_public_status(str(request.base_url), dict(request.headers))
 
 
 @app.patch("/api/desk/settings")
