@@ -83,7 +83,7 @@ export function Home() {
         </ul>
         <p className="muted" style={{ marginTop: 10 }}>
           <Link to="/privacy">Privacy</Link> · <Link to="/compliance">Compliance</Link> ·{" "}
-          <Link to="/brief">Product brief</Link>
+          <Link to="/brief">Product brief</Link> · <Link to="/articles">Scholar articles</Link>
         </p>
       </div>
     </>

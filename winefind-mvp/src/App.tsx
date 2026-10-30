@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Account } from "./pages/Account";
 import { AgeGate } from "./pages/AgeGate";
+import { Articles } from "./pages/Articles";
 import { Brief } from "./pages/Brief";
 import { Compliance } from "./pages/Compliance";
 import { FindWine } from "./pages/FindWine";
@@ -31,6 +32,7 @@ function Gate() {
         <Route path="privacy" element={<Privacy />} />
         <Route path="compliance" element={<Compliance />} />
         <Route path="brief" element={<Brief />} />
+        <Route path="articles" element={<Articles />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

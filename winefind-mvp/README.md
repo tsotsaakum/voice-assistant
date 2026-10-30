@@ -35,6 +35,7 @@ npm run build
 | QA | `npm test` |
 | Launch | [LAUNCH.md](./LAUNCH.md) |
 | Similar shops | [SIMILAR.md](./SIMILAR.md) |
+| Google Scholar articles | [ARTICLES.md](./ARTICLES.md) |
 
 ## Stack
 

@@ -1,5 +1,7 @@
 # Similar apps & shops
 
+Academic reading pack (Google Scholar): see [ARTICLES.md](./ARTICLES.md).
+
 ## Apps
 - [Wine Find: Pocket Sommelier](https://apps.apple.com/app/id6740998562) — primary reference
 - [Vivino](https://apps.apple.com/za/app/vivino-buy-the-right-wine/id414461255) / [vivino.com](https://www.vivino.com)
