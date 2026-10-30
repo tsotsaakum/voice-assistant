@@ -1,0 +1,6 @@
+notes/
+labs/solutions/
+*.pcap
+*.pcapng
+.env
+.venv/
