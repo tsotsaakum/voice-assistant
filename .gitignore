@@ -9,3 +9,5 @@ __pycache__/
 *.mp3
 data/lentswe.json
 data/conversations.json
+weather-dashboard/node_modules/
+weather-dashboard/dist/
