@@ -17,6 +17,7 @@ from src.mail import try_send_email
 from src.memory import Memory
 from src.reminders import try_set_reminder
 from src.skills import music_reply, route_skill
+from src.sleep import handle_sleep
 from src.system import current_date, current_time, status_line, stop_reply, volume_reply
 from src.tools import EMERGENCY, emergency_info, run_tool
 from src.wake_word import is_wake_only, strip_wake, wake_greeting
@@ -102,6 +103,10 @@ def _reply(user_text: str, language_id: str, history: list[dict]) -> str:
     mailed = try_send_email(user_text)
     if mailed:
         return mailed
+
+    slept = handle_sleep(user_text)
+    if slept:
+        return slept
 
     if is_pack_query(user_text):
         return pack_for_trip(user_text)
