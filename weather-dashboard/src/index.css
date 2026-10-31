@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --coral: #e8895a;
+  --ink: #f7f4ef;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  background: #070714;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.88);
+  outline-offset: 3px;
+}
+
+.glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06) 42%, rgba(255, 255, 255, 0.04)),
+    rgba(10, 14, 36, 0.34);
+  backdrop-filter: blur(28px) saturate(165%);
+  -webkit-backdrop-filter: blur(28px) saturate(165%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 28px;
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glass::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 26%);
+  opacity: 0.45;
+}
+
+.glass-flat::before {
+  opacity: 0.22;
+}
+
+.lift {
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.lift:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.coral {
+  background: linear-gradient(180deg, #f4a87e, #e07a4c);
+  color: white;
+  box-shadow:
+    0 8px 20px rgba(224, 122, 76, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.coral:hover {
+  filter: brightness(1.06);
+}
+
+.scroll-x {
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+.snap-card {
+  scroll-snap-align: start;
+}
+
+.rain span,
+.snow span {
+  position: absolute;
+  top: -10%;
+  width: 1px;
+  height: 14vh;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.55));
+  animation: fall 1.1s linear infinite;
+}
+
+.snow span {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: white;
+  animation-duration: 4.5s;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(110vh);
+  }
+}
+
+@keyframes flash {
+  0%,
+  86%,
+  100% {
+    opacity: 0;
+  }
+  88% {
+    opacity: 0.45;
+  }
+  90% {
+    opacity: 0.05;
+  }
+  93% {
+    opacity: 0.55;
+  }
+}
+
+.flash {
+  animation: flash 5.5s infinite;
+}
+
+.display {
+  text-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lift,
+  .rain span,
+  .snow span,
+  .flash {
+    animation: none !important;
+    transition: none !important;
+  }
+}
