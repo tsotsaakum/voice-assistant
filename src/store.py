@@ -12,7 +12,7 @@ DATA = ROOT / "data" / "lentswe.json"
 
 
 def _empty() -> dict:
-    return {"tasks": [], "goals": [], "symptoms": [], "profile": {}, "reminders": []}
+    return {"tasks": [], "goals": [], "symptoms": [], "profile": {}, "reminders": [], "sleep": []}
 
 
 def load() -> dict:
@@ -23,7 +23,14 @@ def load() -> dict:
         data = json.loads(DATA.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return _empty()
-    for key, default in (("tasks", []), ("goals", []), ("symptoms", []), ("profile", {}), ("reminders", [])):
+    for key, default in (
+        ("tasks", []),
+        ("goals", []),
+        ("symptoms", []),
+        ("profile", {}),
+        ("reminders", []),
+        ("sleep", []),
+    ):
         data.setdefault(key, default)
     if not isinstance(data.get("profile"), dict):
         data["profile"] = {}
@@ -97,6 +104,32 @@ def add_symptom(symptom: str, severity: str | None = None) -> dict:
 
 def symptoms() -> list[dict]:
     return load()["symptoms"][-20:]
+
+
+def add_sleep(
+    hours: float,
+    quality: str | None = None,
+    bedtime_min: int | None = None,
+    waketime_min: int | None = None,
+    note: str | None = None,
+) -> dict:
+    data = load()
+    item = {
+        "id": uuid.uuid4().hex[:8],
+        "hours": round(float(hours), 2),
+        "quality": quality,
+        "bedtime_min": bedtime_min,
+        "waketime_min": waketime_min,
+        "note": (note or "").strip() or None,
+        "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    data.setdefault("sleep", []).append(item)
+    save(data)
+    return item
+
+
+def sleep_logs() -> list[dict]:
+    return load().get("sleep", [])[-60:]
 
 
 def set_profile(key: str, value: str) -> dict:
